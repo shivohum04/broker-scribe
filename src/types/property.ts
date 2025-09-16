@@ -1,12 +1,12 @@
 export interface Property {
   id: string;
+  user_id: string;
   type: PropertyType;
   location: string;
   rate: number;
   rateType: 'total' | 'per_sqft' | 'per_acre';
   size: number;
   sizeUnit: 'sqft' | 'acres' | 'sqm';
-  status: PropertyStatus;
   ownerName: string;
   ownerContact: string;
   notes: string;
@@ -15,6 +15,9 @@ export interface Property {
     lat: number;
     lng: number;
   };
+  images?: string[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export type PropertyType = 
@@ -29,10 +32,7 @@ export type PropertyType =
   | 'farmhouse'
   | 'plot';
 
-export type PropertyStatus = 'available' | 'sold' | 'rented' | 'under_negotiation';
-
 export interface PropertyFilters {
   search: string;
   type: PropertyType | 'all';
-  status: PropertyStatus | 'all';
 }

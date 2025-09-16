@@ -1,6 +1,8 @@
-import { Edit2, Trash2, Phone, MapPin, Calendar } from 'lucide-react';
+import { Edit2, Trash2, Phone, MapPin, Calendar, Share2 } from 'lucide-react';
 import { Property } from '@/types/property';
 import { Button } from '@/components/ui/button';
+import { PropertyIcon } from './PropertyIcon';
+import { ShareProperty } from './ShareProperty';
 
 interface PropertyCardProps {
   property: Property;
@@ -9,25 +11,6 @@ interface PropertyCardProps {
 }
 
 export const PropertyCard = ({ property, onEdit, onDelete }: PropertyCardProps) => {
-  const getStatusColor = (status: Property['status']) => {
-    switch (status) {
-      case 'available': return 'bg-success-light text-success border-success/20';
-      case 'sold': return 'bg-destructive-light text-destructive border-destructive/20';
-      case 'rented': return 'bg-warning-light text-warning border-warning/20';
-      case 'under_negotiation': return 'bg-muted text-muted-foreground border-border';
-      default: return 'bg-muted text-muted-foreground border-border';
-    }
-  };
-
-  const getStatusLabel = (status: Property['status']) => {
-    switch (status) {
-      case 'available': return 'Available';
-      case 'sold': return 'Sold';
-      case 'rented': return 'Rented';
-      case 'under_negotiation': return 'Negotiating';
-      default: return status;
-    }
-  };
 
   const formatRate = (rate: number, rateType: Property['rateType']) => {
     if (rate === 0) return 'Not specified';
@@ -56,18 +39,28 @@ export const PropertyCard = ({ property, onEdit, onDelete }: PropertyCardProps) 
   return (
     <div className="bg-card border border-card-border rounded-lg p-4 hover:border-accent-hover hover:shadow-md transition-all duration-200 animate-fade-in">
       <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="flex-1 flex gap-3">
+          <div className="flex-shrink-0">
+            {property.images && property.images.length > 0 ? (
+              <img
+                src={property.images[0]}
+                alt={property.type}
+                className="w-16 h-16 object-cover rounded-lg border border-card-border"
+              />
+            ) : (
+              <div className="w-16 h-16 bg-muted rounded-lg border border-card-border flex items-center justify-center">
+                <PropertyIcon type={property.type} className="h-8 w-8" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
             <h3 className="font-medium text-card-foreground capitalize">
               {property.type.replace('_', ' ')}
             </h3>
-            <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(property.status)}`}>
-              {getStatusLabel(property.status)}
-            </span>
-          </div>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
-            <MapPin className="h-3 w-3" />
-            <span className="line-clamp-1">{property.location}</span>
+            <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <span className="line-clamp-1">{property.location}</span>
+            </div>
           </div>
         </div>
         <div className="flex gap-1">
@@ -129,6 +122,10 @@ export const PropertyCard = ({ property, onEdit, onDelete }: PropertyCardProps) 
             <p className="text-xs text-muted-foreground line-clamp-2">{property.notes}</p>
           </div>
         )}
+
+        <div className="pt-2 border-t border-card-border">
+          <ShareProperty property={property} />
+        </div>
       </div>
     </div>
   );
