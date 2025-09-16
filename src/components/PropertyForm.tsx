@@ -6,8 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LocationInput } from './LocationInput';
-import { Property, PropertyType, PropertyStatus } from '@/types/property';
-import { storage } from '@/lib/storage';
+import { ImageUpload } from './ImageUpload';
+import { Property, PropertyType } from '@/types/property';
+import { propertyService } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 interface PropertyFormProps {
@@ -30,13 +32,6 @@ const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: 'plot', label: 'Plot' },
 ];
 
-const statusOptions: { value: PropertyStatus; label: string }[] = [
-  { value: 'available', label: 'Available' },
-  { value: 'sold', label: 'Sold' },
-  { value: 'rented', label: 'Rented' },
-  { value: 'under_negotiation', label: 'Under Negotiation' },
-];
-
 export const PropertyForm = ({ isOpen, onClose, onPropertyAdded, editProperty }: PropertyFormProps) => {
   const [formData, setFormData] = useState<Partial<Property>>({
     type: editProperty?.type || 'land',
@@ -45,62 +40,71 @@ export const PropertyForm = ({ isOpen, onClose, onPropertyAdded, editProperty }:
     rateType: editProperty?.rateType || 'total',
     size: editProperty?.size || 0,
     sizeUnit: editProperty?.sizeUnit || 'sqft',
-    status: editProperty?.status || 'available',
     ownerName: editProperty?.ownerName || '',
     ownerContact: editProperty?.ownerContact || '',
     notes: editProperty?.notes || '',
     dateOfEntry: editProperty?.dateOfEntry || new Date().toISOString().split('T')[0],
-    coordinates: editProperty?.coordinates
+    coordinates: editProperty?.coordinates,
+    images: editProperty?.images || []
   });
 
   const { toast } = useToast();
+  const { user } = useAuth();
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.location || !formData.ownerName || !formData.ownerContact) {
+    if (!user) {
       toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields",
+        title: "Authentication required",
+        description: "Please sign in to add properties",
         variant: "destructive"
       });
       return;
     }
 
-    const propertyData: Property = {
-      id: editProperty?.id || crypto.randomUUID(),
+    const propertyData = {
+      user_id: user.id,
       type: formData.type as PropertyType,
-      location: formData.location,
+      location: formData.location || '',
       rate: formData.rate || 0,
       rateType: formData.rateType as 'total' | 'per_sqft' | 'per_acre',
       size: formData.size || 0,
       sizeUnit: formData.sizeUnit as 'sqft' | 'acres' | 'sqm',
-      status: formData.status as PropertyStatus,
-      ownerName: formData.ownerName,
-      ownerContact: formData.ownerContact,
+      ownerName: formData.ownerName || '',
+      ownerContact: formData.ownerContact || '',
       notes: formData.notes || '',
       dateOfEntry: formData.dateOfEntry || new Date().toISOString().split('T')[0],
-      coordinates: formData.coordinates
+      coordinates: formData.coordinates,
+      images: formData.images || []
     };
 
-    if (editProperty) {
-      storage.updateProperty(editProperty.id, propertyData);
+    try {
+      if (editProperty) {
+        await propertyService.updateProperty(editProperty.id, propertyData);
+        toast({
+          title: "Property updated",
+          description: "Property details have been updated successfully"
+        });
+      } else {
+        await propertyService.addProperty(propertyData);
+        toast({
+          title: "Property added",
+          description: "New property has been added successfully"
+        });
+      }
+
+      onPropertyAdded();
+      onClose();
+    } catch (error) {
       toast({
-        title: "Property updated",
-        description: "Property details have been updated successfully"
-      });
-    } else {
-      storage.addProperty(propertyData);
-      toast({
-        title: "Property added",
-        description: "New property has been added successfully"
+        title: "Error",
+        description: "Failed to save property. Please try again.",
+        variant: "destructive"
       });
     }
-
-    onPropertyAdded();
-    onClose();
   };
 
   const handleLocationChange = (location: string, coordinates?: { lat: number; lng: number }) => {
@@ -125,7 +129,7 @@ export const PropertyForm = ({ isOpen, onClose, onPropertyAdded, editProperty }:
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto max-h-[calc(90vh-80px)]">
           <div className="space-y-2">
-            <Label htmlFor="type">Property Type *</Label>
+            <Label htmlFor="type">Property Type</Label>
             <Select 
               value={formData.type} 
               onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as PropertyType }))}
@@ -144,7 +148,7 @@ export const PropertyForm = ({ isOpen, onClose, onPropertyAdded, editProperty }:
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location *</Label>
+            <Label htmlFor="location">Location</Label>
             <LocationInput
               value={formData.location || ''}
               onChange={handleLocationChange}
@@ -152,9 +156,14 @@ export const PropertyForm = ({ isOpen, onClose, onPropertyAdded, editProperty }:
             />
           </div>
 
+          <ImageUpload
+            images={formData.images || []}
+            onChange={(images) => setFormData(prev => ({ ...prev, images }))}
+          />
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="rate">Rate *</Label>
+              <Label htmlFor="rate">Rate</Label>
               <Input
                 type="number"
                 value={formData.rate || ''}
@@ -211,26 +220,7 @@ export const PropertyForm = ({ isOpen, onClose, onPropertyAdded, editProperty }:
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select 
-              value={formData.status} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as PropertyStatus }))}
-            >
-              <SelectTrigger className="border-input-border focus:border-input-focus">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map(status => (
-                  <SelectItem key={status.value} value={status.value}>
-                    {status.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="ownerName">Owner Name *</Label>
+            <Label htmlFor="ownerName">Owner Name</Label>
             <Input
               value={formData.ownerName || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, ownerName: e.target.value }))}
@@ -240,7 +230,7 @@ export const PropertyForm = ({ isOpen, onClose, onPropertyAdded, editProperty }:
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ownerContact">Owner Contact *</Label>
+            <Label htmlFor="ownerContact">Owner Contact</Label>
             <Input
               value={formData.ownerContact || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, ownerContact: e.target.value }))}

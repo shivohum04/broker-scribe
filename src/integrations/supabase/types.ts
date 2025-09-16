@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      properties: {
+        Row: {
+          coordinates: Json | null
+          created_at: string
+          date_of_entry: string | null
+          id: string
+          images: string[] | null
+          location: string | null
+          notes: string | null
+          owner_contact: string | null
+          owner_name: string | null
+          rate: number | null
+          rate_type: string | null
+          size: number | null
+          size_unit: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          coordinates?: Json | null
+          created_at?: string
+          date_of_entry?: string | null
+          id?: string
+          images?: string[] | null
+          location?: string | null
+          notes?: string | null
+          owner_contact?: string | null
+          owner_name?: string | null
+          rate?: number | null
+          rate_type?: string | null
+          size?: number | null
+          size_unit?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          coordinates?: Json | null
+          created_at?: string
+          date_of_entry?: string | null
+          id?: string
+          images?: string[] | null
+          location?: string | null
+          notes?: string | null
+          owner_contact?: string | null
+          owner_name?: string | null
+          rate?: number | null
+          rate_type?: string | null
+          size?: number | null
+          size_unit?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
