@@ -1,21 +1,23 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Building, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { PropertyForm } from '@/components/PropertyForm';
-import { PropertyCard } from '@/components/PropertyCard';
-import { Property, PropertyFilters, PropertyType } from '@/types/property';
-import { propertyService } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect, useMemo } from "react";
+import { Plus, Search, Building, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PropertyForm } from "@/components/PropertyForm";
+import { PropertyCard } from "@/components/PropertyCard";
+import { Property, PropertyFilters, PropertyType } from "@/types/property";
+import { propertyService } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export const PropertyManager = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingProperty, setEditingProperty] = useState<Property | undefined>();
+  const [editingProperty, setEditingProperty] = useState<
+    Property | undefined
+  >();
   const [filters, setFilters] = useState<PropertyFilters>({
-    search: '',
-    type: 'all'
+    search: "",
+    type: "all",
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -35,7 +37,7 @@ export const PropertyManager = () => {
       toast({
         title: "Error loading properties",
         description: "Failed to load your properties. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -44,14 +46,20 @@ export const PropertyManager = () => {
 
   // Filter properties based on current filters
   const filteredProperties = useMemo(() => {
-    return properties.filter(property => {
-      const matchesSearch = filters.search === '' || 
-        property.location.toLowerCase().includes(filters.search.toLowerCase()) ||
-        property.ownerName.toLowerCase().includes(filters.search.toLowerCase()) ||
+    return properties.filter((property) => {
+      const matchesSearch =
+        filters.search === "" ||
+        property.location
+          .toLowerCase()
+          .includes(filters.search.toLowerCase()) ||
+        property.ownerName
+          .toLowerCase()
+          .includes(filters.search.toLowerCase()) ||
         property.notes.toLowerCase().includes(filters.search.toLowerCase()) ||
         property.type.toLowerCase().includes(filters.search.toLowerCase());
 
-      const matchesType = filters.type === 'all' || property.type === filters.type;
+      const matchesType =
+        filters.type === "all" || property.type === filters.type;
 
       return matchesSearch && matchesType;
     });
@@ -68,19 +76,19 @@ export const PropertyManager = () => {
   };
 
   const handleDeleteProperty = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this property?')) {
+    if (window.confirm("Are you sure you want to delete this property?")) {
       try {
         await propertyService.deleteProperty(id);
         loadProperties();
         toast({
           title: "Property deleted",
-          description: "Property has been removed successfully"
+          description: "Property has been removed successfully",
         });
       } catch (error) {
         toast({
           title: "Error deleting property",
           description: "Failed to delete property. Please try again.",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     }
@@ -104,24 +112,31 @@ export const PropertyManager = () => {
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Building className="h-6 w-6 text-primary" />
-              <h1 className="text-xl font-semibold">Property Ledger</h1>
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="min-w-0">
               {user && (
-                <span className="text-sm text-muted-foreground">
+                <span className="block text-sm text-muted-foreground truncate max-w-[50vw]">
                   {user.email}
                 </span>
               )}
             </div>
-            <div className="flex gap-2">
-              <Button onClick={handleAddProperty} className="gap-2">
+            <div className="flex gap-2 shrink-0">
+              <Button
+                size="sm"
+                onClick={handleAddProperty}
+                className="gap-2 whitespace-nowrap"
+              >
                 <Plus className="h-4 w-4" />
                 Add Property
               </Button>
-              <Button variant="outline" onClick={handleSignOut} className="gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleSignOut}
+                className="gap-2 whitespace-nowrap"
+              >
                 <LogOut className="h-4 w-4" />
-                Sign Out
+                <span>Sign Out</span>
               </Button>
             </div>
           </div>
@@ -133,7 +148,9 @@ export const PropertyManager = () => {
               <Input
                 placeholder="Search by location, owner, or notes..."
                 value={filters.search}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, search: e.target.value }))
+                }
                 className="pl-10 border-input-border focus:border-input-focus"
               />
             </div>
@@ -152,13 +169,14 @@ export const PropertyManager = () => {
           <div className="text-center py-12">
             <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">
-              {properties.length === 0 ? 'No properties added yet' : 'No matching properties'}
+              {properties.length === 0
+                ? "No properties added yet"
+                : "No matching properties"}
             </h3>
             <p className="text-muted-foreground mb-6">
-              {properties.length === 0 
-                ? 'Start by adding your first property to manage your real estate portfolio.'
-                : 'Try adjusting your search criteria.'
-              }
+              {properties.length === 0
+                ? "Start by adding your first property to manage your real estate portfolio."
+                : "Try adjusting your search criteria."}
             </p>
             {properties.length === 0 && (
               <Button onClick={handleAddProperty} className="gap-2">
