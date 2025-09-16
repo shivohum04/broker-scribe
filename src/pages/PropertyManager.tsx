@@ -1,5 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Search, Building, LogOut } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Building,
+  LogOut,
+  User2,
+  HelpCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PropertyForm } from "@/components/PropertyForm";
@@ -8,6 +15,14 @@ import { Property, PropertyFilters, PropertyType } from "@/types/property";
 import { propertyService } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 export const PropertyManager = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -107,20 +122,53 @@ export const PropertyManager = () => {
     await signOut();
   };
 
+  const handleHelp = () => {
+    const text = encodeURIComponent("Hi Shiv, I need help with Broker Scribe.");
+    const url = `https://wa.me/7999774231?text=${text}`;
+    window.open(url, "_blank");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-2 mb-4">
-            <div className="min-w-0">
-              {user && (
-                <span className="block text-sm text-muted-foreground truncate max-w-[50vw]">
-                  {user.email}
-                </span>
-              )}
+            {/* Left: User dropdown */}
+            <div className="shrink-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <User2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Account</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="space-y-0.5">
+                      <div className="text-sm font-medium truncate">
+                        {user?.user_metadata?.full_name || "User"}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {user?.email}
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={handleHelp} className="gap-2">
+                    <HelpCircle className="h-4 w-4" />
+                    Help on WhatsApp
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={handleSignOut} className="gap-2">
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <div className="flex gap-2 shrink-0">
+            {/* Right: Add Property */}
+            <div className="shrink-0">
               <Button
                 size="sm"
                 onClick={handleAddProperty}
@@ -128,15 +176,6 @@ export const PropertyManager = () => {
               >
                 <Plus className="h-4 w-4" />
                 Add Property
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleSignOut}
-                className="gap-2 whitespace-nowrap"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Sign Out</span>
               </Button>
             </div>
           </div>

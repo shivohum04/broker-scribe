@@ -1,8 +1,8 @@
-import { Edit2, Trash2, Phone, MapPin, Calendar, Share2 } from 'lucide-react';
-import { Property } from '@/types/property';
-import { Button } from '@/components/ui/button';
-import { PropertyIcon } from './PropertyIcon';
-import { ShareProperty } from './ShareProperty';
+import { Edit2, Trash2, Phone, MapPin, Calendar, Share2 } from "lucide-react";
+import { Property } from "@/types/property";
+import { Button } from "@/components/ui/button";
+import { PropertyIcon } from "./PropertyIcon";
+import { ShareProperty } from "./ShareProperty";
 
 interface PropertyCardProps {
   property: Property;
@@ -10,29 +10,35 @@ interface PropertyCardProps {
   onDelete: (id: string) => void;
 }
 
-export const PropertyCard = ({ property, onEdit, onDelete }: PropertyCardProps) => {
+export const PropertyCard = ({
+  property,
+  onEdit,
+  onDelete,
+}: PropertyCardProps) => {
+  const formatRate = (rate: number, rateType: Property["rateType"]) => {
+    if (rate === 0) return "Not specified";
 
-  const formatRate = (rate: number, rateType: Property['rateType']) => {
-    if (rate === 0) return 'Not specified';
-    
-    const formatted = new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
+    const formatted = new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
     }).format(rate);
 
     switch (rateType) {
-      case 'per_sqft': return `${formatted}/sq ft`;
-      case 'per_acre': return `${formatted}/acre`;
-      default: return formatted;
+      case "per_sqft":
+        return `${formatted}/sq ft`;
+      case "per_acre":
+        return `${formatted}/acre`;
+      default:
+        return formatted;
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
 
@@ -55,7 +61,7 @@ export const PropertyCard = ({ property, onEdit, onDelete }: PropertyCardProps) 
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-card-foreground capitalize">
-              {property.type.replace('_', ' ')}
+              {property.type.replace("_", " ")}
             </h3>
             <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
               <MapPin className="h-3 w-3 flex-shrink-0" />
@@ -80,13 +86,17 @@ export const PropertyCard = ({ property, onEdit, onDelete }: PropertyCardProps) 
           >
             <Trash2 className="h-3 w-3" />
           </Button>
+          {/* WhatsApp share inline with edit/delete */}
+          <ShareProperty property={property} />
         </div>
       </div>
 
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <span className="text-sm text-muted-foreground">Rate</span>
-          <span className="text-sm font-medium">{formatRate(property.rate, property.rateType)}</span>
+          <span className="text-sm font-medium">
+            {formatRate(property.rate, property.rateType)}
+          </span>
         </div>
 
         {property.size > 0 && (
@@ -98,34 +108,40 @@ export const PropertyCard = ({ property, onEdit, onDelete }: PropertyCardProps) 
           </div>
         )}
 
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">Owner</span>
-          <span className="text-sm font-medium line-clamp-1">{property.ownerName}</span>
-        </div>
+        {property.ownerName && (
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Owner</span>
+            <span className="text-sm font-medium line-clamp-1">
+              {property.ownerName}
+            </span>
+          </div>
+        )}
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3" />
             <span>{formatDate(property.dateOfEntry)}</span>
           </div>
-          <a 
-            href={`tel:${property.ownerContact}`}
-            className="flex items-center gap-1 text-xs text-primary hover:text-primary-hover transition-colors"
-          >
-            <Phone className="h-3 w-3" />
-            <span className="line-clamp-1">{property.ownerContact}</span>
-          </a>
+          {property.ownerContact && (
+            <a
+              href={`tel:${property.ownerContact}`}
+              className="flex items-center gap-1 text-xs text-primary hover:text-primary-hover transition-colors"
+            >
+              <Phone className="h-3 w-3" />
+              <span className="line-clamp-1">{property.ownerContact}</span>
+            </a>
+          )}
         </div>
 
         {property.notes && (
           <div className="pt-2 border-t border-card-border">
-            <p className="text-xs text-muted-foreground line-clamp-2">{property.notes}</p>
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              {property.notes}
+            </p>
           </div>
         )}
 
-        <div className="pt-2 border-t border-card-border">
-          <ShareProperty property={property} />
-        </div>
+        {/* Removed bottom share and image download section per requirements */}
       </div>
     </div>
   );
