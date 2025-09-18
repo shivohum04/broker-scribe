@@ -1,6 +1,7 @@
-import { Edit2, Trash2, Phone, MapPin, Calendar, Share2, Eye } from "lucide-react";
+import { Edit2, Trash2, Phone, MapPin, Calendar, Share2, MoreVertical } from "lucide-react";
 import { Property } from "@/types/property";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PropertyIcon } from "./PropertyIcon";
 import { ShareProperty } from "./ShareProperty";
 
@@ -47,12 +48,18 @@ export const PropertyCard = ({
   };
 
   return (
-    <div className="bg-card border border-card-border rounded-lg p-4 hover:border-accent-hover hover:shadow-md transition-all duration-200 animate-fade-in">
+    <div 
+      className="bg-card border border-card-border rounded-lg p-4 hover:border-accent-hover hover:shadow-md transition-all duration-200 animate-fade-in cursor-pointer"
+      onClick={() => onView(property)}
+    >
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 flex gap-3">
           <div 
-            className="flex-shrink-0 cursor-pointer"
-            onClick={() => property.images && property.images.length > 0 && onImageClick(property.images, 0)}
+            className="flex-shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              property.images && property.images.length > 0 && onImageClick(property.images, 0);
+            }}
           >
             {property.images && property.images.length > 0 ? (
               <img
@@ -66,10 +73,7 @@ export const PropertyCard = ({
               </div>
             )}
           </div>
-          <div 
-            className="flex-1 min-w-0 cursor-pointer"
-            onClick={() => onView(property)}
-          >
+          <div className="flex-1 min-w-0">
             <h3 className="font-medium text-card-foreground capitalize hover:text-primary transition-colors">
               {property.type.replace("_", " ")}
             </h3>
@@ -79,34 +83,31 @@ export const PropertyCard = ({
             </div>
           </div>
         </div>
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onView(property)}
-            className="h-8 w-8 hover:bg-accent-hover"
-            title="View Property"
-          >
-            <Eye className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onEdit(property)}
-            className="h-8 w-8 hover:bg-accent-hover"
-            title="Edit Property"
-          >
-            <Edit2 className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete(property.id)}
-            className="h-8 w-8 hover:bg-destructive-light hover:text-destructive"
-            title="Delete Property"
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
+        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-accent-hover"
+              >
+                <MoreVertical className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => onEdit(property)}>
+                <Edit2 className="h-4 w-4 mr-2" />
+                Edit Property
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => onDelete(property.id)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Property
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <ShareProperty property={property} />
         </div>
       </div>
