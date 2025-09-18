@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LocationInput } from "./LocationInput";
+import { AddressInput } from "./AddressInput";
 import { ImageUpload } from "./ImageUpload";
 import { Property, PropertyType } from "@/types/property";
 import { propertyService } from "@/lib/supabase";
@@ -46,7 +46,9 @@ export const PropertyForm = ({
 }: PropertyFormProps) => {
   const [formData, setFormData] = useState<Partial<Property>>({
     type: "land",
-    location: "",
+    addressLine1: "",
+    addressLine2: "",
+    addressLine3: "",
     rate: 0,
     rateType: "total",
     size: 0,
@@ -69,7 +71,9 @@ export const PropertyForm = ({
     if (editProperty) {
       setFormData({
         type: editProperty.type,
-        location: editProperty.location || "",
+        addressLine1: editProperty.addressLine1 || "",
+        addressLine2: editProperty.addressLine2 || "",
+        addressLine3: editProperty.addressLine3 || "",
         rate: editProperty.rate || 0,
         rateType: editProperty.rateType,
         size: editProperty.size || 0,
@@ -85,7 +89,9 @@ export const PropertyForm = ({
     } else {
       setFormData({
         type: "land",
-        location: "",
+        addressLine1: "",
+        addressLine2: "",
+        addressLine3: "",
         rate: 0,
         rateType: "total",
         size: 0,
@@ -117,7 +123,9 @@ export const PropertyForm = ({
     const propertyData = {
       user_id: user.id,
       type: formData.type as PropertyType,
-      location: formData.location || "",
+      addressLine1: formData.addressLine1 || "",
+      addressLine2: formData.addressLine2 || "",
+      addressLine3: formData.addressLine3 || "",
       rate: formData.rate || 0,
       rateType: formData.rateType as "total" | "per_sqft" | "per_acre",
       size: formData.size || 0,
@@ -160,13 +168,17 @@ export const PropertyForm = ({
     }
   };
 
-  const handleLocationChange = (
-    location: string,
+  const handleAddressChange = (
+    addressLine1: string,
+    addressLine2: string,
+    addressLine3: string,
     coordinates?: { lat: number; lng: number }
   ) => {
     setFormData((prev) => ({
       ...prev,
-      location,
+      addressLine1,
+      addressLine2,
+      addressLine3,
       coordinates,
     }));
   };
@@ -212,11 +224,12 @@ export const PropertyForm = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <LocationInput
-              value={formData.location || ""}
-              onChange={handleLocationChange}
-              placeholder="Enter or detect location"
+            <Label htmlFor="address">Address</Label>
+            <AddressInput
+              addressLine1={formData.addressLine1 || ""}
+              addressLine2={formData.addressLine2 || ""}
+              addressLine3={formData.addressLine3 || ""}
+              onChange={handleAddressChange}
             />
           </div>
 

@@ -27,9 +27,15 @@ export const ShareProperty = ({ property }: SharePropertyProps) => {
   };
 
   const shareToWhatsApp = () => {
+    const addressText = [
+      property.addressLine1,
+      property.addressLine2,
+      property.addressLine3
+    ].filter(Boolean).join(', ');
+    
     const text = `🏠 ${
       property.type.charAt(0).toUpperCase() + property.type.slice(1)
-    } Property\n📍 ${property.location}\n💰 ${formatRate(
+    } Property\n📍 ${addressText || 'Address not specified'}\n💰 ${formatRate(
       property.rate,
       property.rateType
     )}\n${

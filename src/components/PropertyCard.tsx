@@ -79,7 +79,11 @@ export const PropertyCard = ({
             </h3>
             <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
               <MapPin className="h-3 w-3 flex-shrink-0" />
-              <span className="line-clamp-1">{property.location}</span>
+              <div className="line-clamp-2 text-left">
+                {property.addressLine1 && <div>{property.addressLine1}</div>}
+                {property.addressLine2 && <div>{property.addressLine2}</div>}
+                {property.addressLine3 && <div>{property.addressLine3}</div>}
+              </div>
             </div>
           </div>
         </div>

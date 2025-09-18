@@ -16,12 +16,14 @@ export type Database = {
     Tables: {
       properties: {
         Row: {
+          address_line_1: string | null
+          address_line_2: string | null
+          address_line_3: string | null
           coordinates: Json | null
           created_at: string
           date_of_entry: string | null
           id: string
           images: string[] | null
-          location: string | null
           notes: string | null
           owner_contact: string | null
           owner_name: string | null
@@ -34,12 +36,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          address_line_1?: string | null
+          address_line_2?: string | null
+          address_line_3?: string | null
           coordinates?: Json | null
           created_at?: string
           date_of_entry?: string | null
           id?: string
           images?: string[] | null
-          location?: string | null
           notes?: string | null
           owner_contact?: string | null
           owner_name?: string | null
@@ -52,12 +56,14 @@ export type Database = {
           user_id: string
         }
         Update: {
+          address_line_1?: string | null
+          address_line_2?: string | null
+          address_line_3?: string | null
           coordinates?: Json | null
           created_at?: string
           date_of_entry?: string | null
           id?: string
           images?: string[] | null
-          location?: string | null
           notes?: string | null
           owner_contact?: string | null
           owner_name?: string | null

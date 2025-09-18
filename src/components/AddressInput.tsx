@@ -4,13 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
-interface LocationInputProps {
-  value: string;
-  onChange: (location: string, coordinates?: { lat: number; lng: number }) => void;
-  placeholder?: string;
+interface AddressInputProps {
+  addressLine1: string;
+  addressLine2: string;
+  addressLine3: string;
+  onChange: (addressLine1: string, addressLine2: string, addressLine3: string, coordinates?: { lat: number; lng: number }) => void;
 }
 
-export const LocationInput = ({ value, onChange, placeholder = "Enter location..." }: LocationInputProps) => {
+export const AddressInput = ({ addressLine1, addressLine2, addressLine3, onChange }: AddressInputProps) => {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const { toast } = useToast();
 
@@ -39,20 +40,20 @@ export const LocationInput = ({ value, onChange, placeholder = "Enter location..
           if (response.ok) {
             const data = await response.json();
             const address = data.display_name || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-            onChange(address, { lat: latitude, lng: longitude });
+            onChange(address, addressLine2, addressLine3, { lat: latitude, lng: longitude });
             toast({
               title: "Location found",
-              description: "Current location added successfully"
+              description: "Current location added to address line 1"
             });
           } else {
             // Fallback to coordinates
             const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-            onChange(coords, { lat: latitude, lng: longitude });
+            onChange(coords, addressLine2, addressLine3, { lat: latitude, lng: longitude });
           }
         } catch (error) {
           // Fallback to coordinates
           const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-          onChange(coords, { lat: latitude, lng: longitude });
+          onChange(coords, addressLine2, addressLine3, { lat: latitude, lng: longitude });
           toast({
             title: "Location added",
             description: "Using coordinates as address lookup failed"
@@ -74,14 +75,14 @@ export const LocationInput = ({ value, onChange, placeholder = "Enter location..
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex gap-2">
         <div className="relative flex-1">
           <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
+            value={addressLine1}
+            onChange={(e) => onChange(e.target.value, addressLine2, addressLine3)}
+            placeholder="Address Line 1"
             className="pl-10 border-input-border focus:border-input-focus transition-colors"
           />
         </div>
@@ -100,6 +101,18 @@ export const LocationInput = ({ value, onChange, placeholder = "Enter location..
           )}
         </Button>
       </div>
+      <Input
+        value={addressLine2}
+        onChange={(e) => onChange(addressLine1, e.target.value, addressLine3)}
+        placeholder="Address Line 2"
+        className="border-input-border focus:border-input-focus transition-colors"
+      />
+      <Input
+        value={addressLine3}
+        onChange={(e) => onChange(addressLine1, addressLine2, e.target.value)}
+        placeholder="Address Line 3"
+        className="border-input-border focus:border-input-focus transition-colors"
+      />
     </div>
   );
 };

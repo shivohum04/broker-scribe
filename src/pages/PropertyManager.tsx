@@ -74,7 +74,13 @@ export const PropertyManager = () => {
     return properties.filter((property) => {
       const matchesSearch =
         filters.search === "" ||
-        property.location
+        property.addressLine1
+          .toLowerCase()
+          .includes(filters.search.toLowerCase()) ||
+        property.addressLine2
+          .toLowerCase()
+          .includes(filters.search.toLowerCase()) ||
+        property.addressLine3
           .toLowerCase()
           .includes(filters.search.toLowerCase()) ||
         property.ownerName
@@ -200,17 +206,17 @@ export const PropertyManager = () => {
 
           {/* Search */}
           <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by location, owner, or notes..."
-                value={filters.search}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, search: e.target.value }))
-                }
-                className="pl-10 border-input-border focus:border-input-focus"
-              />
-            </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by address, owner, or notes..."
+              value={filters.search}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, search: e.target.value }))
+              }
+              className="pl-10 border-input-border focus:border-input-focus"
+            />
+          </div>
           </div>
         </div>
       </div>

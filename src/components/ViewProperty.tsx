@@ -92,12 +92,19 @@ export const ViewProperty = ({
 
           {/* Property Details */}
           <div className="p-4 space-y-4">
-            {/* Location */}
+            {/* Address */}
             <div className="flex items-start gap-3">
               <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Location</p>
-                <p className="text-base">{property.location || "Not specified"}</p>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">Address</p>
+                <div className="text-base space-y-1">
+                  {property.addressLine1 && <div>{property.addressLine1}</div>}
+                  {property.addressLine2 && <div>{property.addressLine2}</div>}
+                  {property.addressLine3 && <div>{property.addressLine3}</div>}
+                  {!property.addressLine1 && !property.addressLine2 && !property.addressLine3 && (
+                    <div className="text-muted-foreground">Not specified</div>
+                  )}
+                </div>
               </div>
             </div>
 
