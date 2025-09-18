@@ -2,7 +2,9 @@ export interface Property {
   id: string;
   user_id: string;
   type: PropertyType;
-  location: string;
+  addressLine1: string;
+  addressLine2: string;
+  addressLine3: string;
   rate: number;
   rateType: 'total' | 'per_sqft' | 'per_acre';
   size: number;
