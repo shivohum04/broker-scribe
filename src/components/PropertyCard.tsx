@@ -1,4 +1,4 @@
-import { Edit2, Trash2, Phone, MapPin, Calendar, Share2 } from "lucide-react";
+import { Edit2, Trash2, Phone, MapPin, Calendar, Share2, Eye } from "lucide-react";
 import { Property } from "@/types/property";
 import { Button } from "@/components/ui/button";
 import { PropertyIcon } from "./PropertyIcon";
@@ -8,12 +8,16 @@ interface PropertyCardProps {
   property: Property;
   onEdit: (property: Property) => void;
   onDelete: (id: string) => void;
+  onView: (property: Property) => void;
+  onImageClick: (images: string[], startIndex: number) => void;
 }
 
 export const PropertyCard = ({
   property,
   onEdit,
   onDelete,
+  onView,
+  onImageClick,
 }: PropertyCardProps) => {
   const formatRate = (rate: number, rateType: Property["rateType"]) => {
     if (rate === 0) return "Not specified";
@@ -46,12 +50,15 @@ export const PropertyCard = ({
     <div className="bg-card border border-card-border rounded-lg p-4 hover:border-accent-hover hover:shadow-md transition-all duration-200 animate-fade-in">
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 flex gap-3">
-          <div className="flex-shrink-0">
+          <div 
+            className="flex-shrink-0 cursor-pointer"
+            onClick={() => property.images && property.images.length > 0 && onImageClick(property.images, 0)}
+          >
             {property.images && property.images.length > 0 ? (
               <img
                 src={property.images[0]}
                 alt={property.type}
-                className="w-16 h-16 object-cover rounded-lg border border-card-border"
+                className="w-16 h-16 object-cover rounded-lg border border-card-border hover:opacity-80 transition-opacity"
               />
             ) : (
               <div className="w-16 h-16 bg-muted rounded-lg border border-card-border flex items-center justify-center">
@@ -59,8 +66,11 @@ export const PropertyCard = ({
               </div>
             )}
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-card-foreground capitalize">
+          <div 
+            className="flex-1 min-w-0 cursor-pointer"
+            onClick={() => onView(property)}
+          >
+            <h3 className="font-medium text-card-foreground capitalize hover:text-primary transition-colors">
               {property.type.replace("_", " ")}
             </h3>
             <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
@@ -73,8 +83,18 @@ export const PropertyCard = ({
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => onView(property)}
+            className="h-8 w-8 hover:bg-accent-hover"
+            title="View Property"
+          >
+            <Eye className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => onEdit(property)}
             className="h-8 w-8 hover:bg-accent-hover"
+            title="Edit Property"
           >
             <Edit2 className="h-3 w-3" />
           </Button>
@@ -83,10 +103,10 @@ export const PropertyCard = ({
             size="icon"
             onClick={() => onDelete(property.id)}
             className="h-8 w-8 hover:bg-destructive-light hover:text-destructive"
+            title="Delete Property"
           >
             <Trash2 className="h-3 w-3" />
           </Button>
-          {/* WhatsApp share inline with edit/delete */}
           <ShareProperty property={property} />
         </div>
       </div>

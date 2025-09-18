@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PropertyForm } from "@/components/PropertyForm";
 import { PropertyCard } from "@/components/PropertyCard";
+import { ViewProperty } from "@/components/ViewProperty";
+import { ImageViewer } from "@/components/ImageViewer";
 import { Property, PropertyFilters, PropertyType } from "@/types/property";
 import { propertyService } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +32,14 @@ export const PropertyManager = () => {
   const [editingProperty, setEditingProperty] = useState<
     Property | undefined
   >();
+  const [viewingProperty, setViewingProperty] = useState<
+    Property | null
+  >(null);
+  const [imageViewer, setImageViewer] = useState<{
+    isOpen: boolean;
+    images: string[];
+    startIndex: number;
+  }>({ isOpen: false, images: [], startIndex: 0 });
   const [filters, setFilters] = useState<PropertyFilters>({
     search: "",
     type: "all",
@@ -88,6 +98,14 @@ export const PropertyManager = () => {
   const handleEditProperty = (property: Property) => {
     setEditingProperty(property);
     setIsFormOpen(true);
+  };
+
+  const handleViewProperty = (property: Property) => {
+    setViewingProperty(property);
+  };
+
+  const handleImageClick = (images: string[], startIndex: number) => {
+    setImageViewer({ isOpen: true, images, startIndex });
   };
 
   const handleDeleteProperty = async (id: string) => {
@@ -232,6 +250,8 @@ export const PropertyManager = () => {
                 property={property}
                 onEdit={handleEditProperty}
                 onDelete={handleDeleteProperty}
+                onView={handleViewProperty}
+                onImageClick={handleImageClick}
               />
             ))}
           </div>
@@ -244,6 +264,22 @@ export const PropertyManager = () => {
         onClose={handleFormClose}
         onPropertyAdded={handlePropertySaved}
         editProperty={editingProperty}
+      />
+
+      {/* View Property Modal */}
+      <ViewProperty
+        isOpen={!!viewingProperty}
+        onClose={() => setViewingProperty(null)}
+        property={viewingProperty}
+        onImageClick={handleImageClick}
+      />
+
+      {/* Image Viewer */}
+      <ImageViewer
+        isOpen={imageViewer.isOpen}
+        onClose={() => setImageViewer({ isOpen: false, images: [], startIndex: 0 })}
+        images={imageViewer.images}
+        startIndex={imageViewer.startIndex}
       />
     </div>
   );
