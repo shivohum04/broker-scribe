@@ -1,24 +1,30 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Building, Mail, Lock, User } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Building, Mail, Lock, User, HelpCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { signUp, signIn, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const handleHelp = () => {
+    const text = encodeURIComponent("Hi Shiv, I need help with Broker Scribe.");
+    const url = `https://wa.me/7999774231?text=${text}`;
+    window.open(url, "_blank");
+  };
+
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate("/");
     }
   }, [user, navigate]);
 
@@ -27,7 +33,7 @@ export const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = isSignUp 
+      const { error } = isSignUp
         ? await signUp(email, password)
         : await signIn(email, password);
 
@@ -35,24 +41,25 @@ export const Auth = () => {
         toast({
           title: "Authentication Error",
           description: error.message,
-          variant: "destructive"
+          variant: "destructive",
         });
       } else if (isSignUp) {
         toast({
           title: "Check your email",
-          description: "We sent you a confirmation link to complete your registration."
+          description:
+            "We sent you a confirmation link to complete your registration.",
         });
       } else {
         toast({
           title: "Welcome back!",
-          description: "You've been signed in successfully."
+          description: "You've been signed in successfully.",
         });
       }
     } catch (error) {
       toast({
         title: "Something went wrong",
         description: "Please try again later.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -68,7 +75,9 @@ export const Auth = () => {
             <h1 className="text-2xl font-bold">Property Ledger</h1>
           </div>
           <p className="text-muted-foreground">
-            {isSignUp ? 'Create your account to get started' : 'Sign in to your account'}
+            {isSignUp
+              ? "Create your account to get started"
+              : "Sign in to your account"}
           </p>
         </div>
 
@@ -110,28 +119,42 @@ export const Auth = () => {
               {loading ? (
                 <div className="flex items-center gap-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-transparent border-t-current" />
-                  {isSignUp ? 'Creating account...' : 'Signing in...'}
+                  {isSignUp ? "Creating account..." : "Signing in..."}
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  {isSignUp ? 'Create Account' : 'Sign In'}
+                  {isSignUp ? "Create Account" : "Sign In"}
                 </div>
               )}
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm text-primary hover:text-primary-hover transition-colors"
-            >
-              {isSignUp 
-                ? 'Already have an account? Sign in' 
-                : "Don't have an account? Sign up"
-              }
-            </button>
+          <div className="mt-6 space-y-4">
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-sm text-primary hover:text-primary-hover transition-colors"
+              >
+                {isSignUp
+                  ? "Already have an account? Sign in"
+                  : "Don't have an account? Sign up"}
+              </button>
+            </div>
+
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleHelp}
+                className="gap-2"
+              >
+                <HelpCircle className="h-4 w-4" />
+                Need Help? Contact on WhatsApp
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -8,11 +8,7 @@ interface ImageViewerProps {
   startIndex: number;
 }
 
-export const ImageViewer = ({
-  isOpen,
-  onClose,
-  images,
-}: ImageViewerProps) => {
+export const ImageViewer = ({ isOpen, onClose, images }: ImageViewerProps) => {
   if (!isOpen || images.length === 0) return null;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
