@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { PropertyForm } from "@/components/PropertyForm";
 import { PropertyCard } from "@/components/PropertyCard";
 import { ViewProperty } from "@/components/ViewProperty";
-import { ImageViewer } from "@/components/ImageViewer";
+import { MediaViewer } from "@/components/MediaViewer";
 import { Property, PropertyFilters, PropertyType } from "@/types/property";
 import { propertyService } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,11 +35,11 @@ export const PropertyManager = () => {
   const [viewingProperty, setViewingProperty] = useState<
     Property | null
   >(null);
-  const [imageViewer, setImageViewer] = useState<{
+  const [mediaViewer, setMediaViewer] = useState<{
     isOpen: boolean;
-    images: string[];
+    media: string[];
     startIndex: number;
-  }>({ isOpen: false, images: [], startIndex: 0 });
+  }>({ isOpen: false, media: [], startIndex: 0 });
   const [filters, setFilters] = useState<PropertyFilters>({
     search: "",
     type: "all",
@@ -118,8 +118,8 @@ export const PropertyManager = () => {
     setViewingProperty(property);
   };
 
-  const handleImageClick = (images: string[], startIndex: number) => {
-    setImageViewer({ isOpen: true, images, startIndex });
+  const handleMediaClick = (media: string[], startIndex: number) => {
+    setMediaViewer({ isOpen: true, media, startIndex });
   };
 
   const handleDeleteProperty = async (id: string) => {
@@ -272,7 +272,7 @@ export const PropertyManager = () => {
                 onEdit={handleEditProperty}
                 onDelete={handleDeleteProperty}
                 onView={handleViewProperty}
-                onImageClick={handleImageClick}
+            onImageClick={handleMediaClick}
               />
             ))}
           </div>
@@ -292,15 +292,15 @@ export const PropertyManager = () => {
         isOpen={!!viewingProperty}
         onClose={() => setViewingProperty(null)}
         property={viewingProperty}
-        onImageClick={handleImageClick}
+        onImageClick={handleMediaClick}
       />
 
-      {/* Image Viewer */}
-      <ImageViewer
-        isOpen={imageViewer.isOpen}
-        onClose={() => setImageViewer({ isOpen: false, images: [], startIndex: 0 })}
-        images={imageViewer.images}
-        startIndex={imageViewer.startIndex}
+      {/* Media Viewer */}
+      <MediaViewer
+        isOpen={mediaViewer.isOpen}
+        onClose={() => setMediaViewer({ isOpen: false, media: [], startIndex: 0 })}
+        media={mediaViewer.media}
+        startIndex={mediaViewer.startIndex}
       />
     </div>
   );
