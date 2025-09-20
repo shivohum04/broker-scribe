@@ -97,6 +97,14 @@ export const PropertyManager = () => {
   }, [properties, filters]);
 
   const handleAddProperty = () => {
+    if (properties.length >= 25) {
+      toast({
+        title: "Property limit reached",
+        description: "You've reached the maximum of 25 properties. Contact support for more capacity.",
+        variant: "destructive"
+      });
+      return;
+    }
     setEditingProperty(undefined);
     setIsFormOpen(true);
   };
@@ -117,8 +125,15 @@ export const PropertyManager = () => {
   const handleDeleteProperty = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this property?")) {
       try {
+        // Show loading toast
+        const loadingToast = toast({
+          title: "Deleting property...",
+          description: "Please wait while we remove your property",
+        });
+        
         await propertyService.deleteProperty(id);
         loadProperties();
+        
         toast({
           title: "Property deleted",
           description: "Property has been removed successfully",
@@ -147,7 +162,7 @@ export const PropertyManager = () => {
   };
 
   const handleHelp = () => {
-    const text = encodeURIComponent("Hi Shiv, I need help with Broker Scribe.");
+    const text = encodeURIComponent("Hi Shiv, I need help with Estatebook.");
     const url = `https://wa.me/7999774231?text=${text}`;
     window.open(url, "_blank");
   };
