@@ -63,7 +63,7 @@ export const CoordinatesInput = ({ coordinates, onChange }: CoordinatesInputProp
     <div className="relative">
       <Input
         value={coordinatesDisplay}
-        placeholder={coordinates ? "" : "Tap the location icon to detect coordinates"}
+        placeholder={coordinates ? "" : "Tap icon to detect location"}
         readOnly
         className="border-input-border focus:border-input-focus transition-colors pr-20"
       />

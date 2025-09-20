@@ -26,13 +26,9 @@ export interface Property {
 export type PropertyType =
   | "land"
   | "flat"
-  | "apartment"
   | "independent house"
-  | "bungalow"
-  | "villa"
   | "office"
   | "shop"
-  | "warehouse"
   | "farmhouse"
   | "plot";
 
