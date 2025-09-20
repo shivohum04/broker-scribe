@@ -29,9 +29,13 @@ interface PropertyFormProps {
 const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: "land", label: "Land" },
   { value: "flat", label: "Flat" },
+  { value: "apartment", label: "Apartment" },
   { value: "independent house", label: "Independent House" },
+  { value: "bungalow", label: "Bungalow" },
+  { value: "villa", label: "Villa" },
   { value: "office", label: "Office" },
   { value: "shop", label: "Shop" },
+  { value: "warehouse", label: "Warehouse" },
   { value: "farmhouse", label: "Farmhouse" },
   { value: "plot", label: "Plot" },
 ];

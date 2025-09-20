@@ -42,7 +42,7 @@ export const ShareProperty = ({ property }: SharePropertyProps) => {
       property.size > 0
         ? `📐 ${property.size.toLocaleString()} ${property.sizeUnit}\n`
         : ""
-    }\nShared via Property Ledger`;
+    }\nShared via Estatebook`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
   };
