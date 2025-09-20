@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { AddressInput } from "./AddressInput";
 import { CoordinatesInput } from "./CoordinatesInput";
-import { ImageUpload } from "./ImageUpload";
+import { MediaUpload } from "./MediaUpload";
 import { Property, PropertyType } from "@/types/property";
 import { propertyService } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -340,9 +340,9 @@ export const PropertyForm = ({
             />
           </div>
 
-          <ImageUpload
-            images={formData.images || []}
-            onChange={(images) => setFormData((prev) => ({ ...prev, images }))}
+          <MediaUpload
+            media={formData.images || []}
+            onChange={(media) => setFormData((prev) => ({ ...prev, images: media }))}
           />
 
           <div className="space-y-2">

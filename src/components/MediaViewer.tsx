@@ -1,18 +1,22 @@
-import { X } from "lucide-react";
+import { X, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface ImageViewerProps {
+interface MediaViewerProps {
   isOpen: boolean;
   onClose: () => void;
-  images: string[];
+  media: string[];
   startIndex: number;
 }
 
-export const ImageViewer = ({ isOpen, onClose, images }: ImageViewerProps) => {
-  if (!isOpen || images.length === 0) return null;
+export const MediaViewer = ({ isOpen, onClose, media }: MediaViewerProps) => {
+  if (!isOpen || media.length === 0) return null;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") onClose();
+  };
+
+  const isVideoUrl = (url: string) => {
+    return url.includes('.mp4') || url.includes('.webm') || url.includes('.mov');
   };
 
   return (
@@ -39,16 +43,27 @@ export const ImageViewer = ({ isOpen, onClose, images }: ImageViewerProps) => {
           <X className="h-5 w-5" />
         </Button>
 
-        {/* Scrollable Image List */}
+        {/* Scrollable Media List */}
         <div className="flex-1 w-full max-w-2xl overflow-y-auto py-8 px-4">
           <div className="space-y-4">
-            {images.map((image, index) => (
+            {media.map((url, index) => (
               <div key={index} className="flex justify-center">
-                <img
-                  src={image}
-                  alt={`Property image ${index + 1}`}
-                  className="max-w-full rounded-lg shadow-lg"
-                />
+                {isVideoUrl(url) ? (
+                  <div className="relative max-w-full">
+                    <video
+                      src={url}
+                      controls
+                      className="max-w-full rounded-lg shadow-lg"
+                      style={{ maxHeight: '70vh' }}
+                    />
+                  </div>
+                ) : (
+                  <img
+                    src={url}
+                    alt={`Property media ${index + 1}`}
+                    className="max-w-full rounded-lg shadow-lg"
+                  />
+                )}
               </div>
             ))}
           </div>
