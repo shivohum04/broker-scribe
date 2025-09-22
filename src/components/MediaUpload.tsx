@@ -4,7 +4,6 @@ import { Upload, X, Image as ImageIcon, Video, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { propertyService } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { compressMediaFile, formatFileSize, isImageFile, isVideoFile } from '@/lib/compression';
 
 interface MediaUploadProps {
   media: string[];
@@ -14,11 +13,6 @@ interface MediaUploadProps {
 
 export const MediaUpload = ({ media, onChange, maxFiles = 10 }: MediaUploadProps) => {
   const [uploading, setUploading] = useState(false);
-  const [compressionStats, setCompressionStats] = useState<{
-    totalOriginalSize: number;
-    totalCompressedSize: number;
-    filesProcessed: number;
-  }>({ totalOriginalSize: 0, totalCompressedSize: 0, filesProcessed: 0 });
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -40,49 +34,19 @@ export const MediaUpload = ({ media, onChange, maxFiles = 10 }: MediaUploadProps
 
     setUploading(true);
     const uploadedUrls: string[] = [];
-    let totalOriginalSize = 0;
-    let totalCompressedSize = 0;
 
     try {
       for (const file of filesToUpload) {
-        if (isImageFile(file) || isVideoFile(file)) {
-          // Compress the file
-          toast({
-            title: "Compressing file",
-            description: `Compressing ${file.name}...`,
-          });
-
-          const { compressedFile, originalSize, compressedSize, compressionRatio, fileType } = 
-            await compressMediaFile(file);
-
-          totalOriginalSize += originalSize;
-          totalCompressedSize += compressedSize;
-
-          // Upload compressed file
-          const url = await propertyService.uploadMedia(compressedFile, user.id);
-          uploadedUrls.push(url);
-
-          toast({
-            title: `${fileType === 'image' ? 'Image' : 'Video'} compressed`,
-            description: `${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)} (${compressionRatio.toFixed(1)}% reduction)`,
-          });
-        }
+        const url = await propertyService.uploadMedia(file, user.id);
+        uploadedUrls.push(url);
       }
 
       onChange([...media, ...uploadedUrls]);
       
-      // Update compression stats
-      setCompressionStats(prev => ({
-        totalOriginalSize: prev.totalOriginalSize + totalOriginalSize,
-        totalCompressedSize: prev.totalCompressedSize + totalCompressedSize,
-        filesProcessed: prev.filesProcessed + filesToUpload.length
-      }));
-      
       if (uploadedUrls.length > 0) {
-        const totalReduction = ((totalOriginalSize - totalCompressedSize) / totalOriginalSize) * 100;
         toast({
           title: "Files uploaded successfully",
-          description: `${uploadedUrls.length} file(s) uploaded. Total size reduction: ${totalReduction.toFixed(1)}%`,
+          description: `${uploadedUrls.length} file(s) uploaded successfully.`,
         });
       }
     } catch (error) {
@@ -143,12 +107,6 @@ export const MediaUpload = ({ media, onChange, maxFiles = 10 }: MediaUploadProps
         className="hidden"
       />
 
-      {compressionStats.filesProcessed > 0 && (
-        <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
-          Compression Stats: {formatFileSize(compressionStats.totalOriginalSize)} → {formatFileSize(compressionStats.totalCompressedSize)} 
-          ({(((compressionStats.totalOriginalSize - compressionStats.totalCompressedSize) / compressionStats.totalOriginalSize) * 100).toFixed(1)}% reduction)
-        </div>
-      )}
 
       {media.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
