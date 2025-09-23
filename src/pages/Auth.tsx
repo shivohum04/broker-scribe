@@ -17,7 +17,7 @@ export const Auth = () => {
   const navigate = useNavigate();
 
   const handleHelp = () => {
-    const text = encodeURIComponent("Hi Shiv, I need help with Estatebook.");
+    const text = encodeURIComponent("Hi Shiv, I need help with BrokerLog.");
     const url = `https://wa.me/7999774231?text=${text}`;
     window.open(url, "_blank");
   };
@@ -72,7 +72,7 @@ export const Auth = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Building className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold">Estatebook</h1>
+            <h1 className="text-2xl font-bold">BrokerLog</h1>
           </div>
           <p className="text-muted-foreground">
             {isSignUp

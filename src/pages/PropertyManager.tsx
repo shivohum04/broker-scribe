@@ -162,7 +162,7 @@ export const PropertyManager = () => {
   };
 
   const handleHelp = () => {
-    const text = encodeURIComponent("Hi Shiv, I need help with Estatebook.");
+    const text = encodeURIComponent("Hi Shiv, I need help with BrokerLog.");
     const url = `https://wa.me/7999774231?text=${text}`;
     window.open(url, "_blank");
   };
