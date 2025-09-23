@@ -1,0 +1,8 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  VITE_SUPABASE_PROJECT_ID = "cnphclflgtbcwinxrtjc"
+  VITE_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNucGhjbGZsZ3RiY3dpbnhydGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMTU1NzMsImV4cCI6MjA3MzU5MTU3M30._MMUdY7taIQQxW2wVYBN_-8GpsN9Cm9evxTDiS2xX1M"
+  VITE_SUPABASE_URL = "https://cnphclflgtbcwinxrtjc.supabase.co"
