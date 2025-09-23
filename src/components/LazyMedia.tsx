@@ -31,7 +31,7 @@ const useIntersectionObserver = (
   callback: () => void,
   options: IntersectionObserverInit = {}
 ) => {
-  const targetRef = useRef<HTMLElement>(null);
+  const targetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const target = targetRef.current;
@@ -359,7 +359,8 @@ export const useLazyMedia = (src: string, thumbnailSrc?: string) => {
     } catch (error) {
       console.warn("Failed to load media:", error);
       setHasError(true);
-      setCurrentSrc(getPlaceholderImage(getMediaType(src)));
+      const mediaType = getMediaType(src);
+      setCurrentSrc(getPlaceholderImage(mediaType === "unknown" ? "image" : mediaType));
     }
   }, [src, thumbnailSrc]);
 
