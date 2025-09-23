@@ -1,5 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/types/property";
+import {
+  retryWithBackoff,
+  logUploadError,
+  formatFileSize,
+} from "./upload-utils";
+import { generateThumbnail, getThumbnailUrl } from "./thumbnail-utils";
 
 export const propertyService = {
   async getProperties(): Promise<Property[]> {
@@ -31,6 +37,7 @@ export const propertyService = {
       dateOfEntry: prop.date_of_entry || new Date().toISOString().split("T")[0],
       coordinates: prop.coordinates as Property["coordinates"],
       images: prop.images || [],
+      thumbnail_urls: prop.thumbnail_urls || [],
       created_at: prop.created_at,
       updated_at: prop.updated_at,
     }));
@@ -58,6 +65,7 @@ export const propertyService = {
         date_of_entry: property.dateOfEntry,
         coordinates: property.coordinates,
         images: property.images || [],
+        thumbnail_urls: property.thumbnail_urls || [],
       })
       .select()
       .single();
@@ -85,6 +93,7 @@ export const propertyService = {
       dateOfEntry: data.date_of_entry || new Date().toISOString().split("T")[0],
       coordinates: data.coordinates as Property["coordinates"],
       images: data.images || [],
+      thumbnail_urls: data.thumbnail_urls || [],
       created_at: data.created_at,
       updated_at: data.updated_at,
     };
@@ -109,6 +118,7 @@ export const propertyService = {
         date_of_entry: updates.dateOfEntry,
         coordinates: updates.coordinates,
         images: updates.images,
+        thumbnail_urls: updates.thumbnail_urls,
       })
       .eq("id", id);
 
@@ -122,36 +132,117 @@ export const propertyService = {
   },
 
   async uploadImage(file: File, userId: string): Promise<string> {
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${userId}/${Date.now()}.${fileExt}`;
-
-    const { error } = await supabase.storage
-      .from("property-images")
-      .upload(fileName, file);
-
-    if (error) throw error;
-
-    const { data } = supabase.storage
-      .from("property-images")
-      .getPublicUrl(fileName);
-
-    return data.publicUrl;
+    const result = await this.uploadMedia(file, userId);
+    return result.url;
   },
 
-  async uploadMedia(file: File, userId: string): Promise<string> {
+  async uploadMedia(
+    file: File,
+    userId: string
+  ): Promise<{ url: string; thumbnailUrl: string }> {
     const fileExt = file.name.split(".").pop();
     const fileName = `${userId}/${Date.now()}.${fileExt}`;
 
-    const { error } = await supabase.storage
-      .from("property-images")
-      .upload(fileName, file);
+    const uploadContext = {
+      fileName,
+      fileSize: file.size,
+      fileType: file.type,
+      userId,
+      timestamp: new Date().toISOString(),
+    };
 
-    if (error) throw error;
+    try {
+      console.log(
+        `Starting upload: ${fileName} (${formatFileSize(file.size)})`
+      );
 
-    const { data } = supabase.storage
-      .from("property-images")
-      .getPublicUrl(fileName);
+      // Upload original file
+      const uploadResult = await retryWithBackoff(async () => {
+        const { data, error } = await supabase.storage
+          .from("property-images")
+          .upload(fileName, file, {
+            contentType: file.type,
+            cacheControl: "3600",
+            upsert: false,
+          });
 
-    return data.publicUrl;
+        if (error) {
+          logUploadError(error, uploadContext);
+          throw new Error(`Upload failed: ${error.message}`);
+        }
+
+        return data;
+      });
+
+      const { data: urlData } = supabase.storage
+        .from("property-images")
+        .getPublicUrl(fileName);
+
+      console.log(`Upload successful: ${fileName}`);
+
+      // Generate and upload thumbnail
+      let thumbnailUrl = "";
+      try {
+        console.log(`Generating thumbnail for: ${fileName}`);
+        const thumbnailFile = await generateThumbnail(file);
+
+        const thumbnailFileName = `${userId}/${Date.now()}-thumb.webp`;
+
+        const thumbnailUploadResult = await retryWithBackoff(async () => {
+          const { data, error } = await supabase.storage
+            .from("property-images")
+            .upload(thumbnailFileName, thumbnailFile, {
+              contentType: "image/webp",
+              cacheControl: "3600",
+              upsert: false,
+            });
+
+          if (error) {
+            logUploadError(error, { ...uploadContext, type: "thumbnail" });
+            throw new Error(`Thumbnail upload failed: ${error.message}`);
+          }
+
+          return data;
+        });
+
+        const { data: thumbnailUrlData } = supabase.storage
+          .from("property-images")
+          .getPublicUrl(thumbnailFileName);
+
+        thumbnailUrl = thumbnailUrlData.publicUrl;
+        console.log(`Thumbnail upload successful: ${thumbnailFileName}`);
+      } catch (thumbnailError) {
+        console.warn(
+          `Thumbnail generation/upload failed for ${fileName}:`,
+          thumbnailError
+        );
+        // Don't fail the entire upload if thumbnail generation fails
+        // The system will fall back to placeholder images
+      }
+
+      return {
+        url: urlData.publicUrl,
+        thumbnailUrl: thumbnailUrl,
+      };
+    } catch (error) {
+      logUploadError(error, uploadContext);
+
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes("413")) {
+          throw new Error("File too large. Please try a smaller file.");
+        } else if (error.message.includes("timeout")) {
+          throw new Error(
+            "Upload timed out. Please check your connection and try again."
+          );
+        } else if (error.message.includes("network")) {
+          throw new Error(
+            "Network error. Please check your connection and try again."
+          );
+        }
+      }
+
+      throw error;
+    }
   },
 };

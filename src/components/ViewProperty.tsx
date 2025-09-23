@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Property } from "@/types/property";
 import { PropertyIcon } from "./PropertyIcon";
 import { calculateTotal, calculateRatePerUnit } from "@/lib/calculations";
+import { LazyMedia } from "./LazyMedia";
+import { getThumbnailUrl } from "@/lib/thumbnail-utils";
 
 interface ViewPropertyProps {
   isOpen: boolean;
@@ -109,37 +111,21 @@ export const ViewProperty = ({
                 Media ({property.images.length})
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {property.images.map((url, index) => {
-                  const isVideo = url.includes('.mp4') || url.includes('.webm') || url.includes('.mov');
-                  return (
-                    <div
-                      key={index}
-                      className="aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity relative"
-                      onClick={() => onImageClick(property.images!, index)}
-                    >
-                      {isVideo ? (
-                        <>
-                          <video
-                            src={url}
-                            className="w-full h-full object-cover"
-                            muted
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
-                              <div className="w-0 h-0 border-l-[6px] border-l-white border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent ml-1" />
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <img
-                          src={url}
-                          alt={`Property media ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
-                  );
-                })}
+                {property.images.map((url, index) => (
+                  <div
+                    key={index}
+                    className="aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity relative"
+                    onClick={() => onImageClick(property.images!, index)}
+                  >
+                    <LazyMedia
+                      src={url}
+                      thumbnailSrc={getThumbnailUrl(url)}
+                      alt={`Property media ${index + 1}`}
+                      className="w-full h-full"
+                      showFullSize={true}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           ) : (

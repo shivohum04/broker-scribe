@@ -10,6 +10,8 @@ import {
 import { PropertyIcon } from "./PropertyIcon";
 import { ShareProperty } from "./ShareProperty";
 import { calculateTotal } from "@/lib/calculations";
+import { LazyMedia } from "./LazyMedia";
+import { getThumbnailUrl } from "@/lib/thumbnail-utils";
 
 interface PropertyCardProps {
   property: Property;
@@ -92,31 +94,13 @@ export const PropertyCard = ({
             }}
           >
             {property.images && property.images.length > 0 ? (
-              (() => {
-                const isVideo = property.images[0].includes('.mp4') || 
-                               property.images[0].includes('.webm') || 
-                               property.images[0].includes('.mov');
-                return isVideo ? (
-                  <div className="relative">
-                    <video
-                      src={property.images[0]}
-                      className="w-16 h-16 object-cover rounded-lg border border-card-border hover:opacity-80 transition-opacity"
-                      muted
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-4 h-4 bg-black/50 rounded-full flex items-center justify-center">
-                        <div className="w-0 h-0 border-l-[3px] border-l-white border-t-[2px] border-t-transparent border-b-[2px] border-b-transparent ml-0.5" />
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <img
-                    src={property.images[0]}
-                    alt={property.type}
-                    className="w-16 h-16 object-cover rounded-lg border border-card-border hover:opacity-80 transition-opacity"
-                  />
-                );
-              })()
+              <LazyMedia
+                src={property.images[0]}
+                thumbnailSrc={getThumbnailUrl(property.images[0])}
+                alt={property.type}
+                className="w-16 h-16 rounded-lg border border-card-border hover:opacity-80 transition-opacity"
+                showFullSize={false}
+              />
             ) : (
               <div className="w-16 h-16 bg-muted rounded-lg border border-card-border flex items-center justify-center">
                 <PropertyIcon type={property.type} className="h-8 w-8" />
