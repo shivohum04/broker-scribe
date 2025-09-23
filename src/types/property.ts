@@ -19,7 +19,6 @@ export interface Property {
     lng: number;
   };
   images?: string[];
-  thumbnail_urls?: string[];
   created_at?: string;
   updated_at?: string;
 }

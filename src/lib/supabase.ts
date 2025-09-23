@@ -37,7 +37,6 @@ export const propertyService = {
       dateOfEntry: prop.date_of_entry || new Date().toISOString().split("T")[0],
       coordinates: prop.coordinates as Property["coordinates"],
       images: prop.images || [],
-      thumbnail_urls: prop.thumbnail_urls || [],
       created_at: prop.created_at,
       updated_at: prop.updated_at,
     }));
@@ -65,7 +64,6 @@ export const propertyService = {
         date_of_entry: property.dateOfEntry,
         coordinates: property.coordinates,
         images: property.images || [],
-        thumbnail_urls: property.thumbnail_urls || [],
       })
       .select()
       .single();
@@ -93,7 +91,6 @@ export const propertyService = {
       dateOfEntry: data.date_of_entry || new Date().toISOString().split("T")[0],
       coordinates: data.coordinates as Property["coordinates"],
       images: data.images || [],
-      thumbnail_urls: data.thumbnail_urls || [],
       created_at: data.created_at,
       updated_at: data.updated_at,
     };
@@ -118,7 +115,6 @@ export const propertyService = {
         date_of_entry: updates.dateOfEntry,
         coordinates: updates.coordinates,
         images: updates.images,
-        thumbnail_urls: updates.thumbnail_urls,
       })
       .eq("id", id);
 

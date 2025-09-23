@@ -19,7 +19,6 @@ interface PerformanceTestProps {
   properties: Array<{
     id: string;
     images: string[];
-    thumbnail_urls?: string[];
   }>;
 }
 
