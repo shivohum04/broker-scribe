@@ -9,17 +9,25 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Property } from "@/types/property";
+import { Property, MediaItem } from "@/types/property";
 import { PropertyIcon } from "./PropertyIcon";
 import { calculateTotal, calculateRatePerUnit } from "@/lib/calculations";
 import { LazyMedia } from "./LazyMedia";
 import { getThumbnailUrl } from "@/lib/thumbnail-utils";
+import { localVideoStorage } from "@/lib/media-local";
+import { VideoPlaceholder } from "./VideoPlaceholder";
+import React, { useEffect, useState } from "react";
+import {
+  getCoverThumbnailUrl,
+  getVideoPlaceholder,
+  getMediaUrls,
+} from "@/lib/unified-media-utils";
 
 interface ViewPropertyProps {
   isOpen: boolean;
   onClose: () => void;
   property: Property | null;
-  onImageClick: (images: string[], startIndex: number) => void;
+  onImageClick: (media: MediaItem[], startIndex: number) => void;
 }
 
 export const ViewProperty = ({
@@ -29,6 +37,114 @@ export const ViewProperty = ({
   onImageClick,
 }: ViewPropertyProps) => {
   if (!isOpen || !property) return null;
+
+  const [localVideoUrls, setLocalVideoUrls] = useState<Record<string, string>>(
+    {}
+  );
+
+  useEffect(() => {
+    let isActive = true;
+    const loadLocalVideos = async () => {
+      try {
+        const mediaList: any[] = Array.isArray((property as any).media)
+          ? (property as any).media
+          : [];
+        const entries = await Promise.all(
+          mediaList
+            .filter(
+              (m) =>
+                m?.type === "video" && m?.storageType === "local" && m?.localKey
+            )
+            .map(async (m) => {
+              const url = await localVideoStorage.getLocalVideoUrl(m.localKey);
+              return [m.id, url] as const;
+            })
+        );
+        if (!isActive) return;
+        const map: Record<string, string> = {};
+        for (const [id, url] of entries) {
+          if (url) map[id] = url;
+        }
+        setLocalVideoUrls(map);
+      } catch (_) {}
+    };
+    loadLocalVideos();
+    return () => {
+      isActive = false;
+    };
+  }, [property]);
+
+  const mediaSection = (() => {
+    const mediaList: MediaItem[] = Array.isArray(property.media)
+      ? property.media
+      : [];
+
+    if (mediaList.length > 0) {
+      return (
+        <div className="p-4 border-b border-card-border">
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">
+            Media {mediaList.length > 0 ? `(${mediaList.length})` : ""}
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {mediaList.map((mediaItem: MediaItem, index: number) => (
+              <MediaItemDisplay
+                key={mediaItem.id}
+                mediaItem={mediaItem}
+                index={index}
+                localVideoUrls={localVideoUrls}
+                onMediaClick={() => onImageClick(mediaList, index)}
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (property.images && property.images.length > 0) {
+      // Convert legacy images to MediaItem format for compatibility
+      const legacyMedia: MediaItem[] = property.images.map((url, index) => ({
+        id: `legacy-${index}`,
+        type: "image" as const,
+        storageType: "cloud" as const,
+        url,
+        isCover: index === 0,
+        uploadedAt: new Date().toISOString(),
+        fileName: `image-${index}`,
+        fileSize: 0,
+        fileType: "image/jpeg",
+      }));
+
+      return (
+        <div className="p-4 border-b border-card-border">
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">
+            Media ({property.images.length})
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {legacyMedia.map((mediaItem, index) => (
+              <MediaItemDisplay
+                key={mediaItem.id}
+                mediaItem={mediaItem}
+                index={index}
+                localVideoUrls={{}}
+                onMediaClick={() => onImageClick(legacyMedia, index)}
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 border-b border-card-border">
+        <div className="flex items-center justify-center h-32 bg-muted rounded-lg">
+          <PropertyIcon
+            type={property.type}
+            className="h-16 w-16 text-muted-foreground"
+          />
+        </div>
+      </div>
+    );
+  })();
 
   const formatRate = (rate: number, rateType: Property["rateType"]) => {
     if (rate === 0) return "Not specified";
@@ -105,39 +221,7 @@ export const ViewProperty = ({
 
         <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
           {/* Media Section */}
-          {property.images && property.images.length > 0 ? (
-            <div className="p-4 border-b border-card-border">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                Media ({property.images.length})
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {property.images.map((url, index) => (
-                  <div
-                    key={index}
-                    className="aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity relative"
-                    onClick={() => onImageClick(property.images!, index)}
-                  >
-                    <LazyMedia
-                      src={url}
-                      thumbnailSrc={getThumbnailUrl(url)}
-                      alt={`Property media ${index + 1}`}
-                      className="w-full h-full"
-                      showFullSize={true}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 border-b border-card-border">
-              <div className="flex items-center justify-center h-32 bg-muted rounded-lg">
-                <PropertyIcon
-                  type={property.type}
-                  className="h-16 w-16 text-muted-foreground"
-                />
-              </div>
-            </div>
-          )}
+          {mediaSection}
 
           {/* Property Details */}
           <div className="p-4 space-y-4">
@@ -334,6 +418,44 @@ export const ViewProperty = ({
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// Component to display individual media items
+const MediaItemDisplay = ({
+  mediaItem,
+  index,
+  localVideoUrls,
+  onMediaClick,
+}: {
+  mediaItem: MediaItem;
+  index: number;
+  localVideoUrls: Record<string, string>;
+  onMediaClick: () => void;
+}) => {
+  return (
+    <div
+      className="aspect-square bg-muted rounded-lg overflow-hidden relative cursor-pointer hover:opacity-80 transition-opacity"
+      onClick={onMediaClick}
+    >
+      {mediaItem.type === "video" ? (
+        <VideoPlaceholder className="w-full h-full" />
+      ) : mediaItem.url ? (
+        <LazyMedia
+          src={mediaItem.url}
+          thumbnailSrc={mediaItem.thumbnailUrl}
+          alt={`Property media ${index + 1}`}
+          className="w-full h-full"
+          showFullSize={true}
+        />
+      ) : (
+        <div className="w-full h-full rounded-lg border border-card-border bg-muted flex items-center justify-center">
+          <span className="text-xs text-muted-foreground">
+            Unsupported media
+          </span>
+        </div>
+      )}
     </div>
   );
 };

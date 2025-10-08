@@ -1,3 +1,18 @@
+// Unified media item interface
+export interface MediaItem {
+  id: string;
+  type: "image" | "video";
+  storageType: "cloud" | "local";
+  url?: string; // For cloud storage (images)
+  localKey?: string; // For local storage (videos)
+  thumbnailUrl?: string; // For images only
+  isCover: boolean; // Explicit cover flag
+  uploadedAt: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+}
+
 export interface Property {
   id: string;
   user_id: string;
@@ -18,7 +33,10 @@ export interface Property {
     lat: number;
     lng: number;
   };
+  // Legacy fields for backward compatibility
   images?: string[];
+  media?: MediaItem[]; // New unified media array
+  cover_thumbnail_url?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -27,10 +45,8 @@ export type PropertyType =
   | "land"
   | "flat"
   | "independent house"
-  | "office"
-  | "shop"
-  | "farmhouse"
-  | "plot";
+  | "commercial"
+  | "warehouse";
 
 export interface PropertyFilters {
   search: string;

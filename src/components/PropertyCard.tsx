@@ -1,5 +1,6 @@
 import { Edit2, Trash2, MapPin, MoreVertical, Navigation } from "lucide-react";
-import { Property } from "@/types/property";
+import { localVideoStorage } from "@/lib/media-local";
+import { Property, MediaItem } from "@/types/property";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,13 +13,18 @@ import { ShareProperty } from "./ShareProperty";
 import { calculateTotal } from "@/lib/calculations";
 import { LazyMedia } from "./LazyMedia";
 import { getThumbnailUrl } from "@/lib/thumbnail-utils";
+import {
+  getCoverThumbnailUrl,
+  getVideoPlaceholder,
+  getMediaUrls,
+} from "@/lib/unified-media-utils";
 
 interface PropertyCardProps {
   property: Property;
   onEdit: (property: Property) => void;
   onDelete: (id: string) => void;
   onView: (property: Property) => void;
-  onImageClick: (images: string[], startIndex: number) => void;
+  onImageClick: (media: MediaItem[], startIndex: number) => void;
 }
 
 export const PropertyCard = ({
@@ -86,26 +92,106 @@ export const PropertyCard = ({
         <div className="flex-1 flex gap-3">
           <div
             className="flex-shrink-0"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-              property.images &&
-                property.images.length > 0 &&
-                onImageClick(property.images, 0);
+              const mediaList: MediaItem[] = Array.isArray(property.media)
+                ? property.media
+                : [];
+              if (mediaList.length > 0) {
+                onImageClick(mediaList, 0);
+                return;
+              }
+              // Fallback to legacy images array
+              if (property.images && property.images.length > 0) {
+                // Convert legacy images to MediaItem format for compatibility
+                const legacyMedia: MediaItem[] = property.images.map(
+                  (url, index) => ({
+                    id: `legacy-${index}`,
+                    type: "image" as const,
+                    storageType: "cloud" as const,
+                    url,
+                    isCover: index === 0,
+                    uploadedAt: new Date().toISOString(),
+                    fileName: `image-${index}`,
+                    fileSize: 0,
+                    fileType: "image/jpeg",
+                  })
+                );
+                onImageClick(legacyMedia, 0);
+              }
             }}
           >
-            {property.images && property.images.length > 0 ? (
-              <LazyMedia
-                src={property.images[0]}
-                thumbnailSrc={getThumbnailUrl(property.images[0])}
-                alt={property.type}
-                className="w-16 h-16 rounded-lg border border-card-border hover:opacity-80 transition-opacity"
-                showFullSize={false}
-              />
-            ) : (
-              <div className="w-16 h-16 bg-muted rounded-lg border border-card-border flex items-center justify-center">
-                <PropertyIcon type={property.type} className="h-8 w-8" />
-              </div>
-            )}
+            {(() => {
+              const mediaList: MediaItem[] = Array.isArray(property.media)
+                ? property.media
+                : [];
+
+              // Try to get cover thumbnail from unified media system
+              if (mediaList.length > 0) {
+                const coverThumbnail = getCoverThumbnailUrl(mediaList);
+                if (coverThumbnail) {
+                  return (
+                    <LazyMedia
+                      src={coverThumbnail}
+                      thumbnailSrc={coverThumbnail}
+                      alt={property.type}
+                      className="w-16 h-16 rounded-lg border border-card-border hover:opacity-80 transition-opacity"
+                      showFullSize={false}
+                    />
+                  );
+                }
+
+                // If no cover thumbnail but has videos, show video placeholder
+                if (mediaList.some((m) => m.type === "video")) {
+                  return (
+                    <div className="w-16 h-16 bg-muted rounded-lg border border-card-border flex items-center justify-center">
+                      <div
+                        className="w-0 h-0"
+                        style={{
+                          borderLeft: "10px solid currentColor",
+                          borderTop: "6px solid transparent",
+                          borderBottom: "6px solid transparent",
+                          color: "#6b7280",
+                        }}
+                      />
+                    </div>
+                  );
+                }
+              }
+
+              // Fallback to legacy cover_thumbnail_url
+              if (property.cover_thumbnail_url) {
+                return (
+                  <LazyMedia
+                    src={property.cover_thumbnail_url}
+                    thumbnailSrc={property.cover_thumbnail_url}
+                    alt={property.type}
+                    className="w-16 h-16 rounded-lg border border-card-border hover:opacity-80 transition-opacity"
+                    showFullSize={false}
+                  />
+                );
+              }
+
+              // Fallback to legacy images array
+              if (property.images && property.images.length > 0) {
+                return (
+                  <LazyMedia
+                    src={property.images[0]}
+                    thumbnailSrc={getThumbnailUrl(property.images[0])}
+                    alt={property.type}
+                    className="w-16 h-16 rounded-lg border border-card-border hover:opacity-80 transition-opacity"
+                    showFullSize={false}
+                  />
+                );
+              }
+
+              // Default placeholder
+              return (
+                <div className="w-16 h-16 bg-muted rounded-lg border border-card-border flex items-center justify-center">
+                  <PropertyIcon type={property.type} className="h-8 w-8" />
+                </div>
+              );
+            })()}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-card-foreground capitalize hover:text-primary transition-colors truncate">

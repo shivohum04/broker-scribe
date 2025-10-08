@@ -13,7 +13,12 @@ import { PropertyForm } from "@/components/PropertyForm";
 import { PropertyCard } from "@/components/PropertyCard";
 import { ViewProperty } from "@/components/ViewProperty";
 import { MediaViewer } from "@/components/MediaViewer";
-import { Property, PropertyFilters, PropertyType } from "@/types/property";
+import {
+  Property,
+  PropertyFilters,
+  PropertyType,
+  MediaItem,
+} from "@/types/property";
 import { propertyService } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -32,12 +37,10 @@ export const PropertyManager = () => {
   const [editingProperty, setEditingProperty] = useState<
     Property | undefined
   >();
-  const [viewingProperty, setViewingProperty] = useState<
-    Property | null
-  >(null);
+  const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
   const [mediaViewer, setMediaViewer] = useState<{
     isOpen: boolean;
-    media: string[];
+    media: MediaItem[];
     startIndex: number;
   }>({ isOpen: false, media: [], startIndex: 0 });
   const [filters, setFilters] = useState<PropertyFilters>({
@@ -100,8 +103,9 @@ export const PropertyManager = () => {
     if (properties.length >= 25) {
       toast({
         title: "Property limit reached",
-        description: "You've reached the maximum of 25 properties. Contact support for more capacity.",
-        variant: "destructive"
+        description:
+          "You've reached the maximum of 25 properties. Contact support for more capacity.",
+        variant: "destructive",
       });
       return;
     }
@@ -118,7 +122,7 @@ export const PropertyManager = () => {
     setViewingProperty(property);
   };
 
-  const handleMediaClick = (media: string[], startIndex: number) => {
+  const handleMediaClick = (media: MediaItem[], startIndex: number) => {
     setMediaViewer({ isOpen: true, media, startIndex });
   };
 
@@ -130,10 +134,10 @@ export const PropertyManager = () => {
           title: "Deleting property...",
           description: "Please wait while we remove your property",
         });
-        
+
         await propertyService.deleteProperty(id);
         loadProperties();
-        
+
         toast({
           title: "Property deleted",
           description: "Property has been removed successfully",
@@ -221,17 +225,17 @@ export const PropertyManager = () => {
 
           {/* Search */}
           <div className="space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by address, owner, or notes..."
-              value={filters.search}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, search: e.target.value }))
-              }
-              className="pl-10 border-input-border focus:border-input-focus"
-            />
-          </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by address, owner, or notes..."
+                value={filters.search}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, search: e.target.value }))
+                }
+                className="pl-10 border-input-border focus:border-input-focus"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -272,7 +276,7 @@ export const PropertyManager = () => {
                 onEdit={handleEditProperty}
                 onDelete={handleDeleteProperty}
                 onView={handleViewProperty}
-            onImageClick={handleMediaClick}
+                onImageClick={handleMediaClick}
               />
             ))}
           </div>
@@ -298,7 +302,9 @@ export const PropertyManager = () => {
       {/* Media Viewer */}
       <MediaViewer
         isOpen={mediaViewer.isOpen}
-        onClose={() => setMediaViewer({ isOpen: false, media: [], startIndex: 0 })}
+        onClose={() =>
+          setMediaViewer({ isOpen: false, media: [], startIndex: 0 })
+        }
         media={mediaViewer.media}
         startIndex={mediaViewer.startIndex}
       />

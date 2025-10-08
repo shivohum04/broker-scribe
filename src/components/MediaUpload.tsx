@@ -8,31 +8,45 @@ import {
   Loader2,
   AlertTriangle,
   CheckCircle,
+  Info,
 } from "lucide-react";
+import { MediaInfoPopup } from "./MediaInfoPopup";
 import { useAuth } from "@/hooks/useAuth";
 import { propertyService } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import {
   validateFile,
-  validateVideoDuration,
-  processFile,
+  validateVideoSize,
   formatFileSize,
   logUploadError,
   MAX_FILE_SIZE,
-  MAX_VIDEO_DURATION,
+  MAX_VIDEO_SIZE,
+  MAX_VIDEOS_PER_PROPERTY,
 } from "@/lib/upload-utils";
 import { LazyMedia } from "./LazyMedia";
+import { localVideoStorage } from "@/lib/media-local";
+import { MediaItem } from "@/types/property";
+import {
+  uploadMediaFile,
+  getMediaUrls,
+  getVideoPlaceholder,
+  hasImages,
+} from "@/lib/unified-media-utils";
 
 interface MediaUploadProps {
-  media: string[];
-  onChange: (media: string[]) => void;
+  media: MediaItem[];
+  onChange: (media: MediaItem[]) => void;
   maxFiles?: number;
+  propertyId?: string; // Required for hybrid storage
+  onPreUploadedMedia?: (items: MediaItem[]) => void; // Callback to report pre-uploaded media when no propertyId
 }
 
 export const MediaUpload = ({
   media,
   onChange,
   maxFiles = 10,
+  propertyId,
+  onPreUploadedMedia,
 }: MediaUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
@@ -41,6 +55,7 @@ export const MediaUpload = ({
   const [uploadStatus, setUploadStatus] = useState<
     Record<string, "pending" | "processing" | "uploading" | "success" | "error">
   >({});
+  const [showInfo, setShowInfo] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -63,7 +78,7 @@ export const MediaUpload = ({
     }
 
     setUploading(true);
-    const uploadedUrls: string[] = [];
+    const uploadedMedia: MediaItem[] = [];
     const failedUploads: string[] = [];
 
     // Initialize upload status for all files
@@ -77,42 +92,64 @@ export const MediaUpload = ({
     setUploadStatus(initialStatus);
 
     try {
-      for (const file of filesToUpload) {
+      // Check if we have any images to determine if this is the first image
+      const hasExistingImages = hasImages(media);
+
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const file = filesToUpload[i];
         const fileId = file.name;
 
         try {
           // Step 1: Validate file
           setUploadStatus((prev) => ({ ...prev, [fileId]: "processing" }));
 
-          const validation = validateFile(file);
+          const validation = await validateFile(file);
           if (!validation.isValid) {
             throw new Error(validation.error);
           }
 
-          // Step 2: Validate video duration if it's a video
+          // Step 2: Validate video size and limits if it's a video
           if (file.type.startsWith("video/")) {
-            const videoValidation = await validateVideoDuration(file);
+            const videoValidation = await validateVideoSize(file);
             if (!videoValidation.isValid) {
               throw new Error(videoValidation.error);
             }
+
+            // Check video count limit (only 1 video allowed)
+            const currentVideoCount = media.filter(
+              (m) => m.type === "video"
+            ).length;
+            if (currentVideoCount >= MAX_VIDEOS_PER_PROPERTY) {
+              throw new Error(
+                `Only ${MAX_VIDEOS_PER_PROPERTY} video allowed per property`
+              );
+            }
           }
 
-          // Step 3: Process file (compress if needed)
           setUploadProgress((prev) => ({ ...prev, [fileId]: 25 }));
-          const processedFile = await processFile(file);
 
-          // Step 4: Upload file
+          // Step 3: Upload file
           setUploadStatus((prev) => ({ ...prev, [fileId]: "uploading" }));
           setUploadProgress((prev) => ({ ...prev, [fileId]: 50 }));
 
-          const result = await propertyService.uploadMedia(
-            processedFile,
-            user.id
-          );
-          uploadedUrls.push(result.url);
+          // Determine if this is the first image
+          const isFirstImage =
+            !hasExistingImages && file.type.startsWith("image/") && i === 0;
 
-          setUploadProgress((prev) => ({ ...prev, [fileId]: 100 }));
-          setUploadStatus((prev) => ({ ...prev, [fileId]: "success" }));
+          const result = await uploadMediaFile(
+            file,
+            propertyId || "temp",
+            user.id,
+            isFirstImage
+          );
+
+          if (result.success && result.mediaItem) {
+            uploadedMedia.push(result.mediaItem);
+            setUploadProgress((prev) => ({ ...prev, [fileId]: 100 }));
+            setUploadStatus((prev) => ({ ...prev, [fileId]: "success" }));
+          } else {
+            throw new Error(result.error || "Upload failed");
+          }
         } catch (error) {
           console.error(`Upload failed for ${file.name}:`, error);
           logUploadError(error, {
@@ -136,12 +173,18 @@ export const MediaUpload = ({
       }
 
       // Update media list with successful uploads
-      if (uploadedUrls.length > 0) {
-        onChange([...media, ...uploadedUrls]);
+      if (uploadedMedia.length > 0) {
+        const newMedia = [...media, ...uploadedMedia];
+        onChange(newMedia);
+
+        // If no propertyId, we're in creation mode - report pre-uploaded media
+        if (!propertyId && onPreUploadedMedia) {
+          onPreUploadedMedia(uploadedMedia);
+        }
 
         toast({
           title: "Upload completed",
-          description: `${uploadedUrls.length} file(s) uploaded successfully${
+          description: `${uploadedMedia.length} file(s) uploaded successfully${
             failedUploads.length > 0 ? `, ${failedUploads.length} failed` : ""
           }.`,
           variant: failedUploads.length > 0 ? "destructive" : "default",
@@ -165,15 +208,45 @@ export const MediaUpload = ({
     }
   };
 
-  const removeMedia = (index: number) => {
-    const newMedia = media.filter((_, i) => i !== index);
-    onChange(newMedia);
+  const removeMedia = async (index: number) => {
+    try {
+      const mediaToRemove = media[index];
+
+      // Handle local video cleanup
+      if (mediaToRemove.type === "video" && mediaToRemove.localKey) {
+        await localVideoStorage.removeLocalVideo(mediaToRemove.localKey);
+      }
+
+      // Update local state
+      const newMedia = media.filter((_, i) => i !== index);
+      onChange(newMedia);
+
+      toast({
+        title: "Media removed",
+        description: "Media has been removed from the property.",
+      });
+    } catch (error) {
+      console.error("Failed to remove media:", error);
+      toast({
+        title: "Remove failed",
+        description:
+          error instanceof Error ? error.message : "Failed to remove media.",
+        variant: "destructive",
+      });
+    }
   };
 
   const isVideoUrl = (url: string) => {
     return (
-      url.includes(".mp4") || url.includes(".webm") || url.includes(".mov")
+      url.includes(".mp4") ||
+      url.includes(".webm") ||
+      url.includes(".mov") ||
+      url.startsWith("local-video-")
     );
+  };
+
+  const isLocalVideo = (url: string) => {
+    return url.startsWith("local-video-");
   };
 
   return (
@@ -184,23 +257,13 @@ export const MediaUpload = ({
         </label>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
-          onClick={() => document.getElementById("media-upload")?.click()}
-          disabled={uploading || media.length >= maxFiles}
+          onClick={() => setShowInfo(!showInfo)}
           className="gap-2"
         >
-          {uploading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            <>
-              <Upload className="h-4 w-4" />
-              Add Media
-            </>
-          )}
+          <Info className="h-4 w-4" />
+          Info
         </Button>
       </div>
 
@@ -254,14 +317,24 @@ export const MediaUpload = ({
 
       {media.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
-          {media.map((url, index) => (
-            <div key={index} className="relative group">
-              <LazyMedia
-                src={url}
-                alt={`Property media ${index + 1}`}
-                className="w-full h-24 rounded-lg border border-card-border"
-                showFullSize={true}
-              />
+          {media.map((mediaItem, index) => (
+            <div key={mediaItem.id} className="relative group">
+              {mediaItem.type === "video" ? (
+                <div className="w-full h-24 rounded-lg border border-card-border bg-muted flex items-center justify-center">
+                  <Video className="h-8 w-8 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground ml-2">
+                    Video
+                  </span>
+                </div>
+              ) : (
+                <LazyMedia
+                  src={mediaItem.url || ""}
+                  thumbnailSrc={mediaItem.thumbnailUrl}
+                  alt={`Property media ${index + 1}`}
+                  className="w-full h-24 rounded-lg border border-card-border"
+                  showFullSize={true}
+                />
+              )}
               <Button
                 type="button"
                 variant="destructive"
@@ -271,33 +344,43 @@ export const MediaUpload = ({
               >
                 <X className="h-3 w-3" />
               </Button>
-              {index === 0 && (
+              {mediaItem.isCover && (
                 <div className="absolute bottom-1 left-1 bg-primary text-primary-foreground text-xs px-1 rounded">
                   Cover
                 </div>
               )}
             </div>
           ))}
+          {media.length < maxFiles && (
+            <div
+              className="aspect-square bg-muted rounded-lg border-2 border-dashed border-card-border flex items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
+              onClick={() => document.getElementById("media-upload")?.click()}
+            >
+              <div className="text-center">
+                <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-1" />
+                <span className="text-xs text-muted-foreground">Add Media</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {media.length === 0 && (
-        <div className="border-2 border-dashed border-card-border rounded-lg p-8 text-center">
+        <div
+          className="border-2 border-dashed border-card-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
+          onClick={() => document.getElementById("media-upload")?.click()}
+        >
           <div className="flex justify-center gap-2 mb-2">
             <ImageIcon className="h-8 w-8 text-muted-foreground" />
             <Video className="h-8 w-8 text-muted-foreground" />
           </div>
           <p className="text-sm text-muted-foreground mb-2">
-            No media uploaded yet. Click "Add Media" to upload photos and
-            videos.
+            Click here to upload photos and videos
           </p>
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p>• Maximum file size: {formatFileSize(MAX_FILE_SIZE)}</p>
-            <p>• Maximum video duration: {MAX_VIDEO_DURATION} seconds</p>
-            <p>• Supported formats: JPG, PNG, GIF, WebP, MP4, WebM, MOV</p>
-          </div>
         </div>
       )}
+
+      <MediaInfoPopup isOpen={showInfo} onClose={() => setShowInfo(false)} />
     </div>
   );
 };

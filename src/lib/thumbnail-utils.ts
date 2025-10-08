@@ -1,18 +1,18 @@
 import imageCompression from "browser-image-compression";
 
-// Thumbnail configuration
+// Thumbnail configuration - enforced 150x150 WebP
 export const THUMBNAIL_CONFIG = {
   IMAGE: {
     maxWidth: 150,
     maxHeight: 150,
-    quality: 0.8,
+    quality: 0.5, // 50% quality as required
     format: "image/webp" as const,
     maxSizeMB: 0.05, // 50KB max
   },
   VIDEO: {
-    maxWidth: 200,
-    maxHeight: 200,
-    quality: 0.7,
+    maxWidth: 150, // Match image thumbnails
+    maxHeight: 150,
+    quality: 0.5, // 50% quality as required
     format: "image/webp" as const,
     maxSizeMB: 0.04, // 40KB max
   },
@@ -60,19 +60,16 @@ export const generateVideoThumbnail = async (file: File): Promise<File> => {
     }
 
     video.onloadedmetadata = () => {
-      // Set canvas dimensions
-      const maxSize = Math.max(
-        THUMBNAIL_CONFIG.VIDEO.maxWidth,
-        THUMBNAIL_CONFIG.VIDEO.maxHeight
-      );
+      // Set canvas dimensions to exactly 150x150
+      const targetSize = 150;
       const aspectRatio = video.videoWidth / video.videoHeight;
 
       if (aspectRatio > 1) {
-        canvas.width = maxSize;
-        canvas.height = maxSize / aspectRatio;
+        canvas.width = targetSize;
+        canvas.height = targetSize / aspectRatio;
       } else {
-        canvas.height = maxSize;
-        canvas.width = maxSize * aspectRatio;
+        canvas.height = targetSize;
+        canvas.width = targetSize * aspectRatio;
       }
 
       // Seek to first frame
@@ -191,6 +188,12 @@ export const formatFileSize = (bytes: number): string => {
 export const getMediaType = (url: string): "image" | "video" | "unknown" => {
   if (!url) return "unknown";
 
+  // Handle local video markers
+  if (url.startsWith("local-video-")) return "video";
+
+  // Handle blob URLs (local videos)
+  if (url.startsWith("blob:")) return "video";
+
   const videoExtensions = [".mp4", ".webm", ".mov", ".avi", ".mkv", ".m4v"];
   const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"];
 
@@ -200,6 +203,21 @@ export const getMediaType = (url: string): "image" | "video" | "unknown" => {
     return "video";
   } else if (imageExtensions.some((ext) => lowerUrl.includes(ext))) {
     return "image";
+  }
+
+  return "unknown";
+};
+
+// Enhanced media type detection for MediaItem
+export const getMediaItemType = (item: any): "image" | "video" | "unknown" => {
+  if (item.type) return item.type;
+
+  if (item.url) {
+    return getMediaType(item.url);
+  }
+
+  if (item.localKey) {
+    return "video";
   }
 
   return "unknown";
