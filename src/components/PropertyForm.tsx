@@ -333,12 +333,14 @@ export const PropertyForm = ({
 
       // Collect all successful uploads
       const newMediaItems: MediaItem[] = [];
-      const uploadPromises = Array.from(files).map(async (file) => {
+      const uploadPromises = Array.from(files).map(async (file, index) => {
+        // Mark first image as cover if no existing media
+        const isFirstImage = mediaItems.length === 0 && index === 0;
         const result = await uploadMediaFile(
           file,
           editProperty.id,
           user.id,
-          false // Not first image since we're adding to existing
+          isFirstImage
         );
 
         if (result.success && result.mediaItem) {

@@ -6,6 +6,7 @@ import {
   LogOut,
   User2,
   HelpCircle,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { PropertyForm } from "@/components/PropertyForm";
 import { PropertyCard } from "@/components/PropertyCard";
 import { ViewProperty } from "@/components/ViewProperty";
 import { MediaViewer } from "@/components/MediaViewer";
+import { BrokerProfilePopup } from "@/components/BrokerProfilePopup";
 import {
   Property,
   PropertyFilters,
@@ -20,6 +22,7 @@ import {
   MediaItem,
 } from "@/types/property";
 import { propertyService } from "@/lib/supabase";
+import { UserProfileService } from "@/lib/user-profile-service";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -48,13 +51,28 @@ export const PropertyManager = () => {
     type: "all",
   });
   const [loading, setLoading] = useState(true);
+  const [brokerName, setBrokerName] = useState<string>("User");
+  const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
 
-  // Load properties on mount
+  // Load properties and broker name on mount
   useEffect(() => {
     loadProperties();
-  }, []);
+    loadBrokerName();
+  }, [user]);
+
+  const loadBrokerName = async () => {
+    if (!user) return;
+
+    try {
+      const displayName = await UserProfileService.getBrokerDisplayName(user);
+      setBrokerName(displayName);
+    } catch (error) {
+      console.error("Error loading user name:", error);
+      setBrokerName(user.user_metadata?.full_name || "User");
+    }
+  };
 
   const loadProperties = async () => {
     try {
@@ -165,10 +183,32 @@ export const PropertyManager = () => {
     await signOut();
   };
 
-  const handleHelp = () => {
-    const text = encodeURIComponent("Hi Shiv, I need help with BrokerLog.");
-    const url = `https://wa.me/7999774231?text=${text}`;
-    window.open(url, "_blank");
+  const handleHelp = async () => {
+    if (!user) return;
+
+    try {
+      const whatsappContact = await UserProfileService.getWhatsappContact(user);
+      const contactNumber = whatsappContact || "7999774231"; // Fallback to default
+      const text = encodeURIComponent("Hi Shiv, I need help with BrokerLog.");
+      const url = `https://wa.me/${contactNumber}?text=${text}`;
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error("Error getting WhatsApp contact:", error);
+      // Fallback to default contact
+      const text = encodeURIComponent("Hi Shiv, I need help with BrokerLog.");
+      const url = `https://wa.me/7999774231?text=${text}`;
+      window.open(url, "_blank");
+    }
+  };
+
+  const handleProfileClick = () => {
+    setIsProfilePopupOpen(true);
+  };
+
+  const handleProfileClose = () => {
+    setIsProfilePopupOpen(false);
+    // Reload user name after profile update
+    loadBrokerName();
   };
 
   return (
@@ -183,14 +223,14 @@ export const PropertyManager = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2">
                     <User2 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Account</span>
+                    <span className="hidden sm:inline">{brokerName}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56">
                   <DropdownMenuLabel>
                     <div className="space-y-0.5">
                       <div className="text-sm font-medium truncate">
-                        {user?.user_metadata?.full_name || "User"}
+                        {brokerName}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
                         {user?.email}
@@ -198,6 +238,13 @@ export const PropertyManager = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={handleProfileClick}
+                    className="gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Your Profile
+                  </DropdownMenuItem>
                   <DropdownMenuItem onSelect={handleHelp} className="gap-2">
                     <HelpCircle className="h-4 w-4" />
                     Help on WhatsApp
@@ -277,6 +324,7 @@ export const PropertyManager = () => {
                 onDelete={handleDeleteProperty}
                 onView={handleViewProperty}
                 onImageClick={handleMediaClick}
+                user={user}
               />
             ))}
           </div>
@@ -307,6 +355,13 @@ export const PropertyManager = () => {
         }
         media={mediaViewer.media}
         startIndex={mediaViewer.startIndex}
+      />
+
+      {/* Broker Profile Popup */}
+      <BrokerProfilePopup
+        isOpen={isProfilePopupOpen}
+        onClose={handleProfileClose}
+        user={user}
       />
     </div>
   );

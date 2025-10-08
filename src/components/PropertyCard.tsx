@@ -18,6 +18,11 @@ import {
   getVideoPlaceholder,
   getMediaUrls,
 } from "@/lib/unified-media-utils";
+import {
+  formatRateWithType,
+  formatRateInLakhsCrores,
+} from "@/lib/rate-formatter";
+import { User } from "@supabase/supabase-js";
 
 interface PropertyCardProps {
   property: Property;
@@ -25,6 +30,7 @@ interface PropertyCardProps {
   onDelete: (id: string) => void;
   onView: (property: Property) => void;
   onImageClick: (media: MediaItem[], startIndex: number) => void;
+  user?: User | null;
 }
 
 export const PropertyCard = ({
@@ -33,26 +39,27 @@ export const PropertyCard = ({
   onDelete,
   onView,
   onImageClick,
+  user,
 }: PropertyCardProps) => {
+  console.log(
+    "🔍 [PROPERTY CARD] Component rendered for property:",
+    property.id,
+    "rate:",
+    property.rate,
+    "rateType:",
+    property.rateType
+  );
+
   const formatRate = (rate: number, rateType: Property["rateType"]) => {
+    console.log("🔍 [PROPERTY CARD] formatRate called with:", {
+      rate,
+      rateType,
+      propertyId: property.id,
+    });
     if (rate === 0) return "Not specified";
-
-    const formatted = new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(rate);
-
-    switch (rateType) {
-      case "per_sqft":
-        return `${formatted}/sq ft`;
-      case "per_acre":
-        return `${formatted}/acre`;
-      case "per_hectare":
-        return `${formatted}/hectare`;
-      default:
-        return formatted;
-    }
+    const result = formatRateWithType(rate, rateType);
+    console.log("🔍 [PROPERTY CARD] formatRate result:", result);
+    return result;
   };
 
   const formatRental = (rental: number) => {
@@ -68,11 +75,10 @@ export const PropertyCard = ({
   };
 
   const formatTotal = (total: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(total);
+    console.log("🔍 [PROPERTY CARD] formatTotal called with total:", total);
+    const result = formatRateInLakhsCrores(total);
+    console.log("🔍 [PROPERTY CARD] formatTotal result:", result);
+    return result;
   };
 
   const formatDate = (dateString: string) => {
@@ -226,7 +232,7 @@ export const PropertyCard = ({
         </div>
         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
           {/* Share on the left */}
-          <ShareProperty property={property} />
+          <ShareProperty property={property} user={user} />
           {/* Location icon - only show if coordinates exist */}
           {property.coordinates && (
             <Button
