@@ -278,52 +278,63 @@ export const PropertyCard = ({
         </div>
       </div>
 
-      {/* Bottom metrics: Size, Rental, Total in a row */}
-      <div className="flex justify-between items-center py-3 border-t border-card-border">
-        {/* Size */}
-        <div className="flex flex-col items-center text-center flex-1">
-          <span className="text-sm font-medium">
-            {property.size > 0
-              ? `${property.size.toLocaleString()} ${property.sizeUnit}`
-              : "N/A"}
-          </span>
-          <span className="text-xs text-muted-foreground">Size</span>
-        </div>
+      {/* Bottom metrics: Only show sections with data */}
+      {(property.size > 0 ||
+        property.rentalPerMonth > 0 ||
+        (property.rate > 0 &&
+          property.size > 0 &&
+          calculateTotal(
+            property.rate,
+            property.rateType,
+            property.size,
+            property.sizeUnit
+          ))) && (
+        <div className="flex justify-between items-center py-3 border-t border-card-border">
+          {/* Size - only show if size > 0 */}
+          {property.size > 0 && (
+            <div className="flex flex-col items-center text-center flex-1">
+              <span className="text-sm font-medium">
+                {property.size.toLocaleString()} {property.sizeUnit}
+              </span>
+              <span className="text-xs text-muted-foreground">Size</span>
+            </div>
+          )}
 
-        {/* Rental - only show if rental > 0 */}
-        {property.rentalPerMonth > 0 && (
-          <div className="flex flex-col items-center text-center flex-1">
-            <span className="text-sm font-medium">
-              {formatRental(property.rentalPerMonth)}
-            </span>
-            <span className="text-xs text-muted-foreground">Rental</span>
-          </div>
-        )}
+          {/* Rental - only show if rental > 0 */}
+          {property.rentalPerMonth > 0 && (
+            <div className="flex flex-col items-center text-center flex-1">
+              <span className="text-sm font-medium">
+                {formatRental(property.rentalPerMonth)}
+              </span>
+              <span className="text-xs text-muted-foreground">Rental</span>
+            </div>
+          )}
 
-        {/* Total */}
-        <div className="flex flex-col items-center text-center flex-1">
-          <span className="text-sm font-semibold text-primary">
-            {property.rate > 0 &&
+          {/* Total - only show if rate > 0 and size > 0 and valid calculation */}
+          {property.rate > 0 &&
             property.size > 0 &&
             calculateTotal(
               property.rate,
               property.rateType,
               property.size,
               property.sizeUnit
-            )
-              ? formatTotal(
-                  calculateTotal(
-                    property.rate,
-                    property.rateType,
-                    property.size,
-                    property.sizeUnit
-                  )!
-                )
-              : "N/A"}
-          </span>
-          <span className="text-xs text-muted-foreground">Total</span>
+            ) && (
+              <div className="flex flex-col items-center text-center flex-1">
+                <span className="text-sm font-semibold text-primary">
+                  {formatTotal(
+                    calculateTotal(
+                      property.rate,
+                      property.rateType,
+                      property.size,
+                      property.sizeUnit
+                    )!
+                  )}
+                </span>
+                <span className="text-xs text-muted-foreground">Total</span>
+              </div>
+            )}
         </div>
-      </div>
+      )}
 
       {/* Notes section */}
       {property.notes && property.notes.trim() && (

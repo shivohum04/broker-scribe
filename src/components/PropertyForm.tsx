@@ -103,6 +103,11 @@ export const PropertyForm = ({
           );
           const list = (full && (full as any).media) || [];
           setMediaItems(list);
+          // Update formData with existing media to prevent loss during edit
+          setFormData((prev) => ({
+            ...prev,
+            media: list,
+          }));
           const entries = await Promise.all(
             list
               .filter(
@@ -182,11 +187,11 @@ export const PropertyForm = ({
       notes: formData.notes || "",
       dateOfEntry:
         formData.dateOfEntry || new Date().toISOString().split("T")[0],
-      coordinates: formData.coordinates,
+      coordinates: formData.coordinates || null,
       images: (formData.images || []).filter(
         (img) => !img.startsWith("local-video-")
       ),
-      media: formData.media || [], // Include unified media array
+      media: formData.media || mediaItems || [], // Include unified media array, fallback to mediaItems for edit mode
     };
 
     try {
@@ -252,6 +257,11 @@ export const PropertyForm = ({
         );
         const list = (full && (full as any).media) || [];
         setMediaItems(list);
+        // Update formData.media to keep it in sync
+        setFormData((prev) => ({
+          ...prev,
+          media: list,
+        }));
         const entries = await Promise.all(
           list
             .filter(
