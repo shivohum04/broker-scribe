@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Property, MediaItem } from "@/types/property";
-import { propertyService } from "@/lib/supabase";
+import { propertyService } from "@/backend/properties/property.service";
 import { LazyMedia } from "./LazyMedia";
 import { getThumbnailUrl } from "@/lib/thumbnail-utils";
 import {

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { MediaInfoPopup } from "./MediaInfoPopup";
 import { useAuth } from "@/hooks/useAuth";
-import { propertyService } from "@/lib/supabase";
+import { propertyService } from "@/backend/properties/property.service";
 import { useToast } from "@/hooks/use-toast";
 import {
   validateFile,
@@ -21,8 +21,8 @@ import {
   logUploadError,
   MAX_FILE_SIZE,
   MAX_VIDEO_SIZE,
-  MAX_VIDEOS_PER_PROPERTY,
 } from "@/lib/upload-utils";
+import { useUserLimits } from "@/hooks/useUserLimits";
 import { LazyMedia } from "./LazyMedia";
 import { localVideoStorage } from "@/lib/media-local";
 import { MediaItem } from "@/types/property";
@@ -36,18 +36,26 @@ import {
 interface MediaUploadProps {
   media: MediaItem[];
   onChange: (media: MediaItem[]) => void;
-  maxFiles?: number;
+  maxFiles?: number; // Deprecated: use limits from useUserLimits instead
   propertyId?: string; // Required for hybrid storage
   onPreUploadedMedia?: (items: MediaItem[]) => void; // Callback to report pre-uploaded media when no propertyId
+  userId?: string; // User ID for fetching limits
 }
 
 export const MediaUpload = ({
   media,
   onChange,
-  maxFiles = 10,
+  maxFiles, // Deprecated: will be overridden by limits
   propertyId,
   onPreUploadedMedia,
+  userId,
 }: MediaUploadProps) => {
+  // Get user limits
+  const { data: userLimits } = useUserLimits(userId);
+  
+  // Use limits from hook, fallback to prop or default
+  const maxMediaPerProperty = userLimits?.maxMediaPerProperty ?? maxFiles ?? 10;
+  const maxVideosPerProperty = userLimits?.maxVideosPerProperty ?? 1;
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
     {}
@@ -65,13 +73,29 @@ export const MediaUpload = ({
     const files = event.target.files;
     if (!files || !user) return;
 
-    const remainingSlots = maxFiles - media.length;
+    const remainingSlots = maxMediaPerProperty - media.length;
     const filesToUpload = Array.from(files).slice(0, remainingSlots);
 
     if (filesToUpload.length === 0) {
       toast({
         title: "Upload limit reached",
-        description: `You can only upload up to ${maxFiles} files per property.`,
+        description: `You can only upload up to ${maxMediaPerProperty} files per property.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Pre-validate video count before starting uploads
+    const currentVideoCount = media.filter((m) => m.type === "video").length;
+    const newVideoFiles = filesToUpload.filter((f) =>
+      f.type.startsWith("video/")
+    );
+    const totalVideoCount = currentVideoCount + newVideoFiles.length;
+
+    if (totalVideoCount > maxVideosPerProperty) {
+      toast({
+        title: "Video limit exceeded",
+        description: `You can only upload ${maxVideosPerProperty} video${maxVideosPerProperty > 1 ? 's' : ''} per property. You currently have ${currentVideoCount} video${currentVideoCount !== 1 ? 's' : ''} and are trying to add ${newVideoFiles.length} more.`,
         variant: "destructive",
       });
       return;
@@ -115,13 +139,13 @@ export const MediaUpload = ({
               throw new Error(videoValidation.error);
             }
 
-            // Check video count limit (only 1 video allowed)
+            // Check video count limit
             const currentVideoCount = media.filter(
               (m) => m.type === "video"
             ).length;
-            if (currentVideoCount >= MAX_VIDEOS_PER_PROPERTY) {
+            if (currentVideoCount >= maxVideosPerProperty) {
               throw new Error(
-                `Only ${MAX_VIDEOS_PER_PROPERTY} video allowed per property`
+                `Only ${maxVideosPerProperty} video${maxVideosPerProperty > 1 ? 's' : ''} allowed per property`
               );
             }
           }
@@ -253,7 +277,7 @@ export const MediaUpload = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium">
-          Property Media ({media.length}/{maxFiles})
+          Property Media ({media.length}/{maxMediaPerProperty})
         </label>
         <Button
           type="button"
@@ -351,7 +375,7 @@ export const MediaUpload = ({
               )}
             </div>
           ))}
-          {media.length < maxFiles && (
+          {media.length < maxMediaPerProperty && (
             <div
               className="aspect-square bg-muted rounded-lg border-2 border-dashed border-card-border flex items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
               onClick={() => document.getElementById("media-upload")?.click()}

@@ -14,6 +14,36 @@ export type Database = {
   };
   public: {
     Tables: {
+      user_limits: {
+        Row: {
+          id: string;
+          user_id: string;
+          max_properties: number;
+          max_media_per_property: number;
+          max_videos_per_property: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          max_properties?: number;
+          max_media_per_property?: number;
+          max_videos_per_property?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          max_properties?: number;
+          max_media_per_property?: number;
+          max_videos_per_property?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       properties: {
         Row: {
           address_line_1: string | null;

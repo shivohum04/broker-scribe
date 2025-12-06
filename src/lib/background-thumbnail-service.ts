@@ -1,4 +1,4 @@
-import { propertyService } from "./supabase";
+import { propertyService } from "@/backend/properties/property.service";
 
 /**
  * Background service to generate thumbnails for existing properties

@@ -20,9 +20,13 @@ import { CoordinatesInput } from "./CoordinatesInput";
 import { MediaUpload } from "./MediaUpload";
 import { MediaInfoPopup } from "./MediaInfoPopup";
 import { Property, PropertyType, MediaItem } from "@/types/property";
-import { propertyService } from "@/lib/supabase";
+import { propertyService as backendPropertyService } from "@/backend/properties/property.service";
+import { mediaService } from "@/backend/media/media.service";
+import { propertyService } from "@/lib/supabase"; // Use old service for media methods
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useCreateProperty, useUpdateProperty } from "@/hooks/useProperties";
+import { useUserLimits } from "@/hooks/useUserLimits";
 
 interface PropertyFormProps {
   isOpen: boolean;
@@ -73,6 +77,9 @@ export const PropertyForm = ({
 
   const { toast } = useToast();
   const { user } = useAuth();
+  const { data: userLimits } = useUserLimits(user?.id);
+  const createPropertyMutation = useCreateProperty();
+  const updatePropertyMutation = useUpdateProperty();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -98,10 +105,9 @@ export const PropertyForm = ({
       (async () => {
         try {
           setLoadingMedia(true);
-          const full = await propertyService.getPropertyWithMedia(
-            editProperty.id
-          );
-          const list = (full && (full as any).media) || [];
+          // Use mediaService to get property with media
+          const full = await mediaService.getPropertyWithMedia(editProperty.id);
+          const list = (full?.media || []) as MediaItem[];
           setMediaItems(list);
           // Update formData with existing media to prevent loss during edit
           setFormData((prev) => ({
@@ -199,46 +205,61 @@ export const PropertyForm = ({
       let createdProperty: Property | null = null;
 
       if (editProperty) {
-        await propertyService.updateProperty(editProperty.id, propertyData);
-        toast({
-          title: "Property updated",
-          description: "Property details have been updated successfully",
+        // Use mutation for update
+        await updatePropertyMutation.mutateAsync({
+          id: editProperty.id,
+          updates: propertyData,
         });
+        // Handle media upload for existing properties if needed
+        // Note: media is already included in propertyData, so this may not be needed
+        // But keeping it for safety in case media was added separately
+        if (formData.media && formData.media.length > 0 && formData.media !== propertyData.media) {
+          try {
+            await updatePropertyMutation.mutateAsync({
+              id: editProperty.id,
+              updates: { media: formData.media },
+            });
+          } catch (mediaError) {
+            console.error("Failed to save media:", mediaError);
+            toast({
+              title: "Media save failed",
+              description:
+                "Property was updated but media may not have been saved. You can add media later.",
+              variant: "destructive",
+            });
+          }
+        }
       } else {
-        createdProperty = await propertyService.addProperty(propertyData);
-        toast({
-          title: "Property added",
-          description: "New property has been added successfully",
-        });
-      }
+        // Use mutation for create
+        createdProperty = await createPropertyMutation.mutateAsync(propertyData);
 
-      // Handle media upload for new properties
-      if (createdProperty && formData.media && formData.media.length > 0) {
-        try {
-          // The media is already uploaded and stored in formData.media
-          // We just need to update the property with the media array
-          await propertyService.updateProperty(createdProperty.id, {
-            media: formData.media,
-          });
-        } catch (mediaError) {
-          console.error("Failed to save media:", mediaError);
-          toast({
-            title: "Media save failed",
-            description:
-              "Property was created but media may not have been saved. You can add media later.",
-            variant: "destructive",
-          });
+        // Handle media upload for new properties
+        if (createdProperty && formData.media && formData.media.length > 0) {
+          try {
+            // The media is already uploaded and stored in formData.media
+            // We just need to update the property with the media array
+            await updatePropertyMutation.mutateAsync({
+              id: createdProperty.id,
+              updates: { media: formData.media },
+            });
+          } catch (mediaError) {
+            console.error("Failed to save media:", mediaError);
+            toast({
+              title: "Media save failed",
+              description:
+                "Property was created but media may not have been saved. You can add media later.",
+              variant: "destructive",
+            });
+          }
         }
       }
 
       onPropertyAdded();
       onClose();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save property. Please try again.",
-        variant: "destructive",
-      });
+      // Error handling and toasts are done in the mutation hooks
+      // Only log here for debugging
+      console.error("Error saving property:", error);
     } finally {
       setSubmitting(false);
     }
@@ -252,10 +273,8 @@ export const PropertyForm = ({
         mediaId
       );
       if (result.success) {
-        const full = await propertyService.getPropertyWithMedia(
-          editProperty.id
-        );
-        const list = (full && (full as any).media) || [];
+        const full = await mediaService.getPropertyWithMedia(editProperty.id);
+        const list = (full?.media || []) as MediaItem[];
         setMediaItems(list);
         // Update formData.media to keep it in sync
         setFormData((prev) => ({
@@ -338,12 +357,47 @@ export const PropertyForm = ({
       return;
     }
 
+    // Get limits (with defaults)
+    const maxMediaPerProperty = userLimits?.maxMediaPerProperty ?? 10;
+    const maxVideosPerProperty = userLimits?.maxVideosPerProperty ?? 1;
+
+    // Check media count limit
+    const currentMediaCount = mediaItems.length;
+    const remainingSlots = maxMediaPerProperty - currentMediaCount;
+    if (remainingSlots <= 0) {
+      toast({
+        title: "Media limit reached",
+        description: `You can only upload up to ${maxMediaPerProperty} files per property.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check video count limit
+    const currentVideoCount = mediaItems.filter((m) => m.type === "video").length;
+    const newVideoFiles = Array.from(files).filter((f) =>
+      f.type.startsWith("video/")
+    );
+    const totalVideoCount = currentVideoCount + newVideoFiles.length;
+
+    if (totalVideoCount > maxVideosPerProperty) {
+      toast({
+        title: "Video limit exceeded",
+        description: `You can only upload ${maxVideosPerProperty} video${maxVideosPerProperty > 1 ? 's' : ''} per property. You currently have ${currentVideoCount} video${currentVideoCount !== 1 ? 's' : ''} and are trying to add ${newVideoFiles.length} more.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Limit files to remaining slots
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+
     try {
       const { uploadMediaFile } = await import("@/lib/unified-media-utils");
 
       // Collect all successful uploads
       const newMediaItems: MediaItem[] = [];
-      const uploadPromises = Array.from(files).map(async (file, index) => {
+      const uploadPromises = filesToUpload.map(async (file, index) => {
         // Mark first image as cover if no existing media
         const isFirstImage = mediaItems.length === 0 && index === 0;
         const result = await uploadMediaFile(
@@ -381,7 +435,7 @@ export const PropertyForm = ({
 
         // Update the property in the database with all new media
         try {
-          await propertyService.updateProperty(editProperty.id, {
+          await backendPropertyService.updateProperty(editProperty.id, {
             media: updatedMedia,
           });
         } catch (dbError) {
@@ -573,6 +627,7 @@ export const PropertyForm = ({
               media={formData.media || []}
               onChange={(media) => setFormData((prev) => ({ ...prev, media }))}
               propertyId={editProperty?.id}
+              userId={user?.id}
               onPreUploadedMedia={(items) => {
                 console.log(
                   "🎥 [PROPERTY FORM] onPreUploadedMedia callback triggered:",

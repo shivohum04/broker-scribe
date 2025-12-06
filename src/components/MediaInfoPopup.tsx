@@ -8,7 +8,6 @@ import { formatFileSize } from "@/lib/upload-utils";
 import {
   MAX_FILE_SIZE,
   MAX_VIDEO_SIZE,
-  MAX_VIDEOS_PER_PROPERTY,
 } from "@/lib/upload-utils";
 
 interface MediaInfoPopupProps {

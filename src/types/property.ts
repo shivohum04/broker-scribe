@@ -52,3 +52,18 @@ export interface PropertyFilters {
   search: string;
   type: PropertyType | "all";
 }
+
+/**
+ * Input type for creating a new property (excludes id and timestamps)
+ */
+export type CreatePropertyInput = Omit<
+  Property,
+  "id" | "created_at" | "updated_at"
+>;
+
+/**
+ * Input type for updating a property (all fields optional except id)
+ */
+export type UpdatePropertyInput = Partial<
+  Omit<Property, "id" | "created_at" | "updated_at">
+>;

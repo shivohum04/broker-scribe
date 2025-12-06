@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { propertyService } from "@/lib/supabase";
+import { propertyService } from "@/backend/properties/property.service";
 import { generateThumbnail, getThumbnailUrl } from "@/lib/thumbnail-utils";
 import { Image, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 

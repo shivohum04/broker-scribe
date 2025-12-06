@@ -12,7 +12,7 @@ import {
   Phone,
   FileText,
 } from "lucide-react";
-import { propertyService } from "@/lib/supabase";
+import { propertyService } from "@/backend/properties/property.service";
 import { localVideoStorage } from "@/lib/media-local";
 import { LazyMedia } from "@/components/LazyMedia";
 import { Property } from "@/types/property";

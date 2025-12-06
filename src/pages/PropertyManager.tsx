@@ -21,10 +21,14 @@ import {
   PropertyType,
   MediaItem,
 } from "@/types/property";
-import { propertyService } from "@/lib/supabase";
 import { UserProfileService } from "@/lib/user-profile-service";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import {
+  useProperties,
+  useDeleteProperty,
+} from "@/hooks/useProperties";
+import { useUserLimits } from "@/hooks/useUserLimits";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -35,7 +39,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export const PropertyManager = () => {
-  const [properties, setProperties] = useState<Property[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<
     Property | undefined
@@ -50,15 +53,34 @@ export const PropertyManager = () => {
     search: "",
     type: "all",
   });
-  const [loading, setLoading] = useState(true);
   const [brokerName, setBrokerName] = useState<string>("User");
   const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
 
-  // Load properties and broker name on mount
+  // Use React Query hooks for properties
+  const {
+    data: properties = [],
+    isLoading: loading,
+    error: propertiesError,
+  } = useProperties(user?.id);
+
+  // Get user limits
+  const {
+    data: userLimits,
+    isLoading: limitsLoading,
+  } = useUserLimits(user?.id);
+
+  // Delete property mutation
+  const deletePropertyMutation = useDeleteProperty();
+
+  // Compute property count and limit status
+  const propertyCount = properties.length;
+  const maxProperties = userLimits?.maxProperties ?? 70;
+  const canCreateProperty = propertyCount < maxProperties;
+
+  // Load broker name on mount
   useEffect(() => {
-    loadProperties();
     loadBrokerName();
   }, [user]);
 
@@ -71,22 +93,6 @@ export const PropertyManager = () => {
     } catch (error) {
       console.error("Error loading user name:", error);
       setBrokerName(user.user_metadata?.full_name || "User");
-    }
-  };
-
-  const loadProperties = async () => {
-    try {
-      setLoading(true);
-      const loadedProperties = await propertyService.getProperties();
-      setProperties(loadedProperties);
-    } catch (error) {
-      toast({
-        title: "Error loading properties",
-        description: "Failed to load your properties. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -118,11 +124,10 @@ export const PropertyManager = () => {
   }, [properties, filters]);
 
   const handleAddProperty = () => {
-    if (properties.length >= 25) {
+    if (!canCreateProperty) {
       toast({
         title: "Property limit reached",
-        description:
-          "You've reached the maximum of 25 properties. Contact support for more capacity.",
+        description: `You've reached the maximum of ${maxProperties} properties. Contact support for more capacity.`,
         variant: "destructive",
       });
       return;
@@ -146,27 +151,13 @@ export const PropertyManager = () => {
 
   const handleDeleteProperty = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this property?")) {
-      try {
-        // Show loading toast
-        const loadingToast = toast({
-          title: "Deleting property...",
-          description: "Please wait while we remove your property",
-        });
+      // Show loading toast
+      toast({
+        title: "Deleting property...",
+        description: "Please wait while we remove your property",
+      });
 
-        await propertyService.deleteProperty(id);
-        loadProperties();
-
-        toast({
-          title: "Property deleted",
-          description: "Property has been removed successfully",
-        });
-      } catch (error) {
-        toast({
-          title: "Error deleting property",
-          description: "Failed to delete property. Please try again.",
-          variant: "destructive",
-        });
-      }
+      deletePropertyMutation.mutate(id);
     }
   };
 
@@ -176,7 +167,10 @@ export const PropertyManager = () => {
   };
 
   const handlePropertySaved = () => {
-    loadProperties();
+    // React Query will automatically refetch properties after mutations
+    // No need to manually reload
+    setIsFormOpen(false);
+    setEditingProperty(undefined);
   };
 
   const handleSignOut = async () => {
@@ -262,7 +256,13 @@ export const PropertyManager = () => {
               <Button
                 size="sm"
                 onClick={handleAddProperty}
+                disabled={!canCreateProperty || limitsLoading}
                 className="gap-2 whitespace-nowrap"
+                title={
+                  !canCreateProperty
+                    ? `Property limit reached (${propertyCount}/${maxProperties})`
+                    : undefined
+                }
               >
                 <Plus className="h-4 w-4" />
                 Add Property
@@ -293,6 +293,16 @@ export const PropertyManager = () => {
           <div className="text-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-transparent border-t-primary mx-auto mb-4" />
             <p className="text-muted-foreground">Loading properties...</p>
+          </div>
+        ) : propertiesError ? (
+          <div className="text-center py-12">
+            <Building className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Error loading properties</h3>
+            <p className="text-muted-foreground mb-6">
+              {propertiesError instanceof Error
+                ? propertiesError.message
+                : "Failed to load properties. Please try again."}
+            </p>
           </div>
         ) : filteredProperties.length === 0 ? (
           <div className="text-center py-12">

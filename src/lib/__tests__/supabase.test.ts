@@ -1,4 +1,4 @@
-import { propertyService } from "../supabase";
+import { propertyService } from "@/backend/properties/property.service";
 
 // Mock Supabase client
 jest.mock("@/integrations/supabase/client", () => ({

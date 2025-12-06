@@ -1,6 +1,7 @@
 import { MediaItem } from "@/types/property";
 import { localVideoStorage } from "./media-local";
-import { propertyService } from "./supabase";
+import { propertyService as backendPropertyService } from "@/backend/properties/property.service";
+import { propertyService } from "@/lib/supabase"; // Use old service for media upload methods
 import { generateThumbnail } from "./thumbnail-utils";
 import { formatFileSize } from "./upload-utils";
 

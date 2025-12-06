@@ -9,42 +9,19 @@ import {
 import { generateThumbnail, getThumbnailUrl } from "./thumbnail-utils";
 import { localVideoStorage, LocalVideoResult } from "./media-local";
 import { uploadMediaFile, getCoverThumbnailUrl } from "./unified-media-utils";
+// Backend layer imports
+import { propertyService as backendPropertyService } from "@/backend/properties/property.service";
+import { mediaService } from "@/backend/media/media.service";
 
+// Legacy propertyService - kept for backward compatibility with media/utility methods
+// Property CRUD operations should use propertyService from @/backend/properties/property.service
 export const propertyService = {
+  /**
+   * @deprecated Use propertyService from @/backend/properties/property.service instead
+   * Get all properties - delegates to backend service
+   */
   async getProperties(): Promise<Property[]> {
-    const { data, error } = await supabase
-      .from("properties")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-    return data.map((prop) => ({
-      id: prop.id,
-      user_id: prop.user_id,
-      type: prop.type as Property["type"],
-      addressLine1: prop.address_line_1 || "",
-      addressLine2: prop.address_line_2 || "",
-      addressLine3: prop.address_line_3 || "",
-      rate: prop.rate || 0,
-      rateType: prop.rate_type as
-        | "total"
-        | "per_sqft"
-        | "per_acre"
-        | "per_hectare",
-      rentalPerMonth: prop.rental_per_month || 0,
-      size: prop.size || 0,
-      sizeUnit: prop.size_unit as "sqft" | "acres" | "hectare",
-      ownerName: prop.owner_name || "",
-      ownerContact: prop.owner_contact || "",
-      notes: prop.notes || "",
-      dateOfEntry: prop.date_of_entry || new Date().toISOString().split("T")[0],
-      coordinates: prop.coordinates as Property["coordinates"],
-      images: prop.images || [],
-      media: prop.media || [], // Include unified media array
-      cover_thumbnail_url: prop.cover_thumbnail_url || null,
-      created_at: prop.created_at,
-      updated_at: prop.updated_at,
-    }));
+    return backendPropertyService.getProperties();
   },
 
   /**
@@ -169,98 +146,27 @@ export const propertyService = {
     console.log("🎥 [ATTACH MEDIA] Successfully updated property with media");
   },
 
+  /**
+   * @deprecated Use propertyService.createProperty from @/backend/properties/property.service instead
+   */
   async addProperty(
     property: Omit<Property, "id" | "created_at" | "updated_at">
   ): Promise<Property> {
-    const { data, error } = await supabase
-      .from("properties")
-      .insert({
-        user_id: property.user_id,
-        type: property.type,
-        address_line_1: property.addressLine1,
-        address_line_2: property.addressLine2,
-        address_line_3: property.addressLine3,
-        rate: property.rate,
-        rate_type: property.rateType,
-        rental_per_month: property.rentalPerMonth,
-        size: property.size,
-        size_unit: property.sizeUnit,
-        owner_name: property.ownerName,
-        owner_contact: property.ownerContact,
-        notes: property.notes,
-        date_of_entry: property.dateOfEntry,
-        coordinates: property.coordinates,
-        images: property.images || [],
-        media: property.media || [], // Include unified media array
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Failed to create property:", error);
-      throw error;
-    }
-
-    return {
-      id: data.id,
-      user_id: data.user_id,
-      type: data.type as Property["type"],
-      addressLine1: data.address_line_1 || "",
-      addressLine2: data.address_line_2 || "",
-      addressLine3: data.address_line_3 || "",
-      rate: data.rate || 0,
-      rateType: data.rate_type as
-        | "total"
-        | "per_sqft"
-        | "per_acre"
-        | "per_hectare",
-      rentalPerMonth: data.rental_per_month || 0,
-      size: data.size || 0,
-      sizeUnit: data.size_unit as "sqft" | "acres" | "hectare",
-      ownerName: data.owner_name || "",
-      ownerContact: data.owner_contact || "",
-      notes: data.notes || "",
-      dateOfEntry: data.date_of_entry || new Date().toISOString().split("T")[0],
-      coordinates: data.coordinates as Property["coordinates"],
-      images: data.images || [],
-      created_at: data.created_at,
-      updated_at: data.updated_at,
-    };
+    return backendPropertyService.createProperty(property);
   },
 
+  /**
+   * @deprecated Use propertyService.updateProperty from @/backend/properties/property.service instead
+   */
   async updateProperty(id: string, updates: Partial<Property>): Promise<void> {
-    const { error } = await supabase
-      .from("properties")
-      .update({
-        type: updates.type,
-        address_line_1: updates.addressLine1,
-        address_line_2: updates.addressLine2,
-        address_line_3: updates.addressLine3,
-        rate: updates.rate,
-        rate_type: updates.rateType,
-        rental_per_month: updates.rentalPerMonth,
-        size: updates.size,
-        size_unit: updates.sizeUnit,
-        owner_name: updates.ownerName,
-        owner_contact: updates.ownerContact,
-        notes: updates.notes,
-        date_of_entry: updates.dateOfEntry,
-        coordinates: updates.coordinates,
-        images: updates.images,
-        media: updates.media, // Include unified media array
-      })
-      .eq("id", id);
-
-    if (error) {
-      console.error("Failed to update property:", error);
-      throw error;
-    }
+    await backendPropertyService.updateProperty(id, updates);
   },
 
+  /**
+   * @deprecated Use propertyService.deleteProperty from @/backend/properties/property.service instead
+   */
   async deleteProperty(id: string): Promise<void> {
-    const { error } = await supabase.from("properties").delete().eq("id", id);
-
-    if (error) throw error;
+    await backendPropertyService.deleteProperty(id);
   },
 
   async uploadImage(file: File, userId: string): Promise<string> {
@@ -760,7 +666,7 @@ export const propertyService = {
   },
 
   /**
-   * Remove media from property
+   * @deprecated Use mediaService.removeMediaFromProperty from @/backend/media/media.service instead
    */
   async removeMediaFromProperty(
     propertyId: string,
@@ -770,114 +676,14 @@ export const propertyService = {
     newCoverThumbnailUrl?: string;
     error?: string;
   }> {
-    try {
-      // Get current media array
-      const { data: property, error: fetchError } = await supabase
-        .from("properties")
-        .select("media, cover_thumbnail_url")
-        .eq("id", propertyId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      const currentMedia = property.media || [];
-      const mediaToRemove = currentMedia.find((m: any) => m.id === mediaId);
-
-      if (!mediaToRemove) {
-        return { success: false, error: "Media not found" };
-      }
-
-      // Remove from array
-      const updatedMedia = currentMedia.filter((m: any) => m.id !== mediaId);
-
-      // Handle local video cleanup
-      if (mediaToRemove.storageType === "local" && mediaToRemove.localKey) {
-        await localVideoStorage.removeLocalVideo(mediaToRemove.localKey);
-      }
-
-      // Determine new cover thumbnail
-      let newCoverThumbnailUrl = property.cover_thumbnail_url;
-      const remainingImages = updatedMedia.filter(
-        (m: any) => m.type === "image"
-      );
-
-      if (remainingImages.length > 0) {
-        // Promote first remaining image to cover
-        newCoverThumbnailUrl = remainingImages[0].thumbnailUrl;
-      } else {
-        // No images left, clear cover thumbnail
-        newCoverThumbnailUrl = null;
-      }
-
-      // Update property
-      const { error: updateError } = await retryWithBackoff(async () => {
-        const { error } = await supabase
-          .from("properties")
-          .update({
-            media: updatedMedia,
-            cover_thumbnail_url: newCoverThumbnailUrl,
-          })
-          .eq("id", propertyId);
-
-        if (error) throw error;
-        return { error: null };
-      });
-
-      if (updateError) throw updateError;
-
-      return {
-        success: true,
-        newCoverThumbnailUrl: newCoverThumbnailUrl || undefined,
-      };
-    } catch (error) {
-      console.error("Failed to remove media from property:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
+    return mediaService.removeMediaFromProperty(propertyId, mediaId);
   },
 
   /**
-   * Get full property with media
+   * @deprecated Use mediaService.getPropertyWithMedia from @/backend/media/media.service instead
    */
   async getPropertyWithMedia(propertyId: string): Promise<Property | null> {
-    const { data, error } = await supabase
-      .from("properties")
-      .select("*")
-      .eq("id", propertyId)
-      .single();
-
-    if (error) throw error;
-    if (!data) return null;
-
-    return {
-      id: data.id,
-      user_id: data.user_id,
-      type: data.type as Property["type"],
-      addressLine1: data.address_line_1 || "",
-      addressLine2: data.address_line_2 || "",
-      addressLine3: data.address_line_3 || "",
-      rate: data.rate || 0,
-      rateType: data.rate_type as
-        | "total"
-        | "per_sqft"
-        | "per_acre"
-        | "per_hectare",
-      rentalPerMonth: data.rental_per_month || 0,
-      size: data.size || 0,
-      sizeUnit: data.size_unit as "sqft" | "acres" | "hectare",
-      ownerName: data.owner_name || "",
-      ownerContact: data.owner_contact || "",
-      notes: data.notes || "",
-      dateOfEntry: data.date_of_entry || new Date().toISOString().split("T")[0],
-      coordinates: data.coordinates as Property["coordinates"],
-      images: data.images || [], // Keep for backward compatibility
-      media: data.media || [], // New media array
-      cover_thumbnail_url: data.cover_thumbnail_url,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
-    };
+    return mediaService.getPropertyWithMedia(propertyId);
   },
 
   /**

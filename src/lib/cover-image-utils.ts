@@ -1,4 +1,4 @@
-import { propertyService } from "./supabase";
+import { propertyService } from "@/backend/properties/property.service";
 
 /**
  * Handles cover image changes and thumbnail replacement

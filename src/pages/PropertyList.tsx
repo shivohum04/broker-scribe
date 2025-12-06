@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, MapPin, DollarSign, Calendar } from "lucide-react";
-import { propertyService } from "@/lib/supabase";
+import { propertyService } from "@/backend/properties/property.service";
 import { useAuth } from "@/hooks/useAuth";
 import { LazyMedia } from "@/components/LazyMedia";
 
