@@ -24,6 +24,7 @@ import {
 import { UserProfileService } from "@/lib/user-profile-service";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { openWhatsApp } from "@/lib/whatsapp-utils";
 import {
   useProperties,
   useDeleteProperty,
@@ -55,6 +56,7 @@ export const PropertyManager = () => {
   });
   const [brokerName, setBrokerName] = useState<string>("User");
   const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
 
@@ -174,7 +176,18 @@ export const PropertyManager = () => {
   };
 
   const handleSignOut = async () => {
-    await signOut();
+    setSigningOut(true);
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Sign out error:", error);
+      toast({
+        title: "Error signing out",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+      setSigningOut(false);
+    }
   };
 
   const handleHelp = async () => {
@@ -183,15 +196,13 @@ export const PropertyManager = () => {
     try {
       const whatsappContact = await UserProfileService.getWhatsappContact(user);
       const contactNumber = whatsappContact || "7999774231"; // Fallback to default
-      const text = encodeURIComponent("Hi Shiv, I need help with BrokerLog.");
-      const url = `https://wa.me/${contactNumber}?text=${text}`;
-      window.open(url, "_blank");
+      const text = "Hi Shiv, I need help with BrokerLog.";
+      openWhatsApp(contactNumber, text);
     } catch (error) {
       console.error("Error getting WhatsApp contact:", error);
       // Fallback to default contact
-      const text = encodeURIComponent("Hi Shiv, I need help with BrokerLog.");
-      const url = `https://wa.me/7999774231?text=${text}`;
-      window.open(url, "_blank");
+      const text = "Hi Shiv, I need help with BrokerLog.";
+      openWhatsApp("7999774231", text);
     }
   };
 
@@ -207,6 +218,16 @@ export const PropertyManager = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Sign Out Loader Overlay */}
+      {signingOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="text-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-transparent border-t-primary mx-auto mb-4" />
+            <p className="text-lg font-medium">Signing out...</p>
+            <p className="text-sm text-muted-foreground mt-2">Please wait</p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -244,9 +265,22 @@ export const PropertyManager = () => {
                     Help on WhatsApp
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={handleSignOut} className="gap-2">
-                    <LogOut className="h-4 w-4" />
-                    Sign Out
+                  <DropdownMenuItem 
+                    onSelect={handleSignOut} 
+                    className="gap-2"
+                    disabled={signingOut}
+                  >
+                    {signingOut ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-transparent border-t-current" />
+                        Signing Out...
+                      </>
+                    ) : (
+                      <>
+                        <LogOut className="h-4 w-4" />
+                        Sign Out
+                      </>
+                    )}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

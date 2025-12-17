@@ -12,7 +12,7 @@ Create a `.env` file in the root directory with the following variables:
 VITE_SUPABASE_PROJECT_ID="your-project-id"
 VITE_SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
 VITE_SUPABASE_URL="https://your-project-id.supabase.co"
-```
+```pa
 
 ### Security Best Practices
 

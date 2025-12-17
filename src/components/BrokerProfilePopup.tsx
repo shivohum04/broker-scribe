@@ -83,13 +83,35 @@ export const BrokerProfilePopup = ({
   const handleSave = async () => {
     if (!user) return;
 
+    // Validate name length
+    const trimmedName = whatsappName.trim();
+    if (trimmedName.length > 30) {
+      toast({
+        title: "Invalid name",
+        description: "Name must not exceed 30 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate phone number (must be exactly 10 digits if provided)
+    const trimmedContact = whatsappContact.trim();
+    if (trimmedContact && trimmedContact.length !== 10) {
+      toast({
+        title: "Invalid phone number",
+        description: "Phone number must be exactly 10 digits",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const { error } = await supabase.from("user_profiles").upsert(
         {
           user_id: user.id,
-          whatsapp_name: whatsappName.trim() || null,
-          whatsapp_contact: whatsappContact.trim() || null,
+          whatsapp_name: trimmedName || null,
+          whatsapp_contact: trimmedContact || null,
         },
         {
           onConflict: "user_id",
@@ -141,25 +163,42 @@ export const BrokerProfilePopup = ({
               id="whatsapp-name"
               placeholder="Enter your name (e.g., John Smith)"
               value={whatsappName}
-              onChange={(e) => setWhatsappName(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.length <= 30) {
+                  setWhatsappName(value);
+                }
+              }}
+              maxLength={30}
               disabled={loading}
             />
-            <p className="text-xs text-muted-foreground">
-              This name will be shown when sharing properties on WhatsApp
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                This name will be shown when sharing properties on WhatsApp
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {whatsappName.length}/30
+              </p>
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="whatsapp-contact">Contact Number</Label>
             <Input
               id="whatsapp-contact"
-              placeholder="Enter your WhatsApp number (e.g., +1234567890)"
+              placeholder="Enter 10-digit phone number (e.g., 7999774231)"
               value={whatsappContact}
-              onChange={(e) => setWhatsappContact(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, ""); // Remove non-digits
+                if (value.length <= 10) {
+                  setWhatsappContact(value);
+                }
+              }}
+              maxLength={10}
               disabled={loading}
             />
             <p className="text-xs text-muted-foreground">
-              Your contact number for WhatsApp sharing
+              Your contact number for WhatsApp sharing (10 digits required)
             </p>
           </div>
 

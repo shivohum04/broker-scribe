@@ -3,6 +3,7 @@ import { Share2 } from "lucide-react";
 import { Property } from "@/types/property";
 import { UserProfileService } from "@/lib/user-profile-service";
 import { User } from "@supabase/supabase-js";
+import { openWhatsAppWithText } from "@/lib/whatsapp-utils";
 
 interface SharePropertyProps {
   property: Property;
@@ -79,48 +80,12 @@ export const ShareProperty = ({ property, user }: SharePropertyProps) => {
           : ""
       }${notesSection}${brokerInfo}\n\nShared via BrokerLog`;
 
-      // Detect mobile device
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      console.log("📱 [WHATSAPP SHARE] User agent:", navigator.userAgent);
-      console.log("📱 [WHATSAPP SHARE] Is mobile:", isMobile);
-      console.log("📱 [WHATSAPP SHARE] Text length:", text.length);
-
-      // For mobile devices, try multiple approaches
-      if (isMobile) {
-        // Approach 1: Try WhatsApp app URL first
-        const whatsappAppUrl = `whatsapp://send?text=${encodeURIComponent(
-          text
-        )}`;
-        console.log("📱 [WHATSAPP SHARE] Trying app URL:", whatsappAppUrl);
-
-        // Create a temporary link and click it (more reliable on mobile)
-        const link = document.createElement("a");
-        link.href = whatsappAppUrl;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        // Fallback after a short delay
-        setTimeout(() => {
-          const webUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-          console.log("📱 [WHATSAPP SHARE] Fallback to web URL:", webUrl);
-          window.open(webUrl, "_blank");
-        }, 1000);
-      } else {
-        // For desktop, use web version
-        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-        console.log("📱 [WHATSAPP SHARE] Desktop URL:", whatsappUrl);
-        window.open(whatsappUrl, "_blank");
-      }
+      // Use the utility function for reliable mobile support
+      openWhatsAppWithText(text);
     } catch (error) {
       console.error("📱 [WHATSAPP SHARE] Error:", error);
       // Final fallback
-      const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(
-        "Check out this property on BrokerLog!"
-      )}`;
-      window.open(fallbackUrl, "_blank");
+      openWhatsAppWithText("Check out this property on BrokerLog!");
     }
   };
 
