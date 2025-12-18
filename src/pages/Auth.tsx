@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building, Mail, Lock, User, HelpCircle, Eye, EyeOff } from "lucide-react";
+import { Building2, Mail, Lock, User, HelpCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { shareToWhatsAppContact } from "@/lib/whatsapp-utils";
 
 export const Auth = () => {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [isSignUp, setIsSignUp] = useState(searchParams.get("mode") === "signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -25,7 +26,7 @@ export const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate("/");
+      navigate("/app");
     }
   }, [user, navigate]);
 
@@ -72,7 +73,7 @@ export const Auth = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Building className="h-8 w-8 text-primary" />
+            <Building2 className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold">BrokerLog</h1>
           </div>
           <p className="text-muted-foreground">
@@ -98,6 +99,11 @@ export const Auth = () => {
                   required
                 />
               </div>
+              {isSignUp && (
+                <p className="text-xs text-muted-foreground">
+                  Verification link will be sent to this email
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

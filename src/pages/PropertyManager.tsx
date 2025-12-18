@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import {
   Plus,
   Search,
-  Building,
+  Building2,
   LogOut,
   User2,
   HelpCircle,
@@ -319,7 +319,7 @@ export const PropertyManager = () => {
           </div>
         ) : propertiesError ? (
           <div className="text-center py-12">
-            <Building className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <Building2 className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">Error loading properties</h3>
             <p className="text-muted-foreground mb-6">
               {propertiesError instanceof Error
@@ -329,7 +329,7 @@ export const PropertyManager = () => {
           </div>
         ) : filteredProperties.length === 0 ? (
           <div className="text-center py-12">
-            <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">
               {properties.length === 0
                 ? "No properties added yet"

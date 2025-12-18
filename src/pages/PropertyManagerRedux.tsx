@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import {
   Plus,
   Search,
-  Building,
+  Building2,
   LogOut,
   User2,
   HelpCircle,
@@ -199,7 +199,7 @@ export const PropertyManager = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Building className="h-8 w-8 text-primary" />
+              <Building2 className="h-8 w-8 text-primary" />
               <h1 className="text-2xl font-bold">BrokerLog</h1>
             </div>
 
@@ -279,7 +279,7 @@ export const PropertyManager = () => {
           </div>
         ) : filteredProperties.length === 0 ? (
           <div className="text-center py-12">
-            <Building className="mx-auto h-12 w-12 text-muted-foreground" />
+            <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-semibold">No properties found</h3>
             <p className="text-muted-foreground">
               {filters.search || filters.type !== "all"
