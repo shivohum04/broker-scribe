@@ -1,16 +1,18 @@
 /**
- * WhatsApp sharing utilities using wa.me universal links
+ * WhatsApp sharing utilities
  * - Mobile: Opens WhatsApp app directly
  * - Desktop: Opens WhatsApp Web
  */
 
 /**
- * Share text on WhatsApp
+ * Share text on WhatsApp (without specific contact)
+ * Uses api.whatsapp.com/send which preserves text without phone number
  * @param text - Message text to share
  */
 export function shareOnWhatsApp(text: string): void {
   const encodedText = encodeURIComponent(text);
-  const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+  // api.whatsapp.com/send preserves text even without phone number
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedText}`;
   
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   
