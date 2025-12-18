@@ -24,7 +24,7 @@ import {
 import { UserProfileService } from "@/lib/user-profile-service";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { openWhatsApp } from "@/lib/whatsapp-utils";
+import { shareToWhatsAppContact } from "@/lib/whatsapp-utils";
 import {
   useProperties,
   useDeleteProperty,
@@ -190,20 +190,9 @@ export const PropertyManager = () => {
     }
   };
 
-  const handleHelp = async () => {
-    if (!user) return;
-
-    try {
-      const whatsappContact = await UserProfileService.getWhatsappContact(user);
-      const contactNumber = whatsappContact || "7999774231"; // Fallback to default
-      const text = "Hi Shiv, I need help with BrokerLog.";
-      openWhatsApp(contactNumber, text);
-    } catch (error) {
-      console.error("Error getting WhatsApp contact:", error);
-      // Fallback to default contact
-      const text = "Hi Shiv, I need help with BrokerLog.";
-      openWhatsApp("7999774231", text);
-    }
+  const handleHelp = () => {
+    const text = "Hi Shiv, I need help with BrokerLog.";
+    shareToWhatsAppContact("7999774231", text);
   };
 
   const handleProfileClick = () => {
@@ -262,7 +251,7 @@ export const PropertyManager = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={handleHelp} className="gap-2">
                     <HelpCircle className="h-4 w-4" />
-                    Help on WhatsApp
+                    Get Help
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 

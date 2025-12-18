@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Building, Mail, Lock, User, HelpCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { openWhatsApp } from "@/lib/whatsapp-utils";
+import { shareToWhatsAppContact } from "@/lib/whatsapp-utils";
 
 export const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -20,7 +20,7 @@ export const Auth = () => {
 
   const handleHelp = () => {
     const text = "Hi Shiv, I need help with BrokerLog.";
-    openWhatsApp("7999774231", text);
+    shareToWhatsAppContact("7999774231", text);
   };
 
   useEffect(() => {
@@ -165,7 +165,7 @@ export const Auth = () => {
                 className="gap-2"
               >
                 <HelpCircle className="h-4 w-4" />
-                Need Help? Contact on WhatsApp
+                Need Help?
               </Button>
             </div>
           </div>

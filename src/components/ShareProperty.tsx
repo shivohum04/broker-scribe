@@ -3,7 +3,7 @@ import { Share2 } from "lucide-react";
 import { Property } from "@/types/property";
 import { UserProfileService } from "@/lib/user-profile-service";
 import { User } from "@supabase/supabase-js";
-import { openWhatsAppWithText } from "@/lib/whatsapp-utils";
+import { shareOnWhatsApp } from "@/lib/whatsapp-utils";
 
 interface SharePropertyProps {
   property: Property;
@@ -80,12 +80,10 @@ export const ShareProperty = ({ property, user }: SharePropertyProps) => {
           : ""
       }${notesSection}${brokerInfo}\n\nShared via BrokerLog`;
 
-      // Use the utility function for reliable mobile support
-      openWhatsAppWithText(text);
+      shareOnWhatsApp(text);
     } catch (error) {
-      console.error("📱 [WHATSAPP SHARE] Error:", error);
-      // Final fallback
-      openWhatsAppWithText("Check out this property on BrokerLog!");
+      console.error("📱 [SHARE] Error:", error);
+      shareOnWhatsApp("Check out this property on BrokerLog!");
     }
   };
 

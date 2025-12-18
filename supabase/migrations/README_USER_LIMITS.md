@@ -104,3 +104,4 @@ SELECT * FROM public.user_limits LIMIT 1;
 2. The 404 errors should stop appearing in the console
 3. User-specific limits will be created automatically on first access
 
+
