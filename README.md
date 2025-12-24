@@ -1,73 +1,236 @@
-# Welcome to your Lovable project
+# BrokerLog
 
-## Project info
+**BrokerLog** is a web application built to modernize how next-generation real estate professionals manage, track, and share property deals — without relying on notebooks, WhatsApp threads, or scattered spreadsheets.
 
-**URL**: https://lovable.dev/projects/5d5bd479-68f5-4c7e-9ef6-7d376350b152
+It is designed for **active deal-makers**, not legacy brokers who treat data storage as the job.  
+The core philosophy is simple:
 
-## How can I edit this code?
+> **The human brain is for closing deals, not remembering them.**
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## Problem Statement
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/5d5bd479-68f5-4c7e-9ef6-7d376350b152) and start prompting.
+During early research, this product was built alongside **two real users**:
 
-Changes made via Lovable will be committed automatically to this repo.
+1. A **real estate mediator** dealing in multiple property types (residential, commercial, land)
+2. A **real estate investment manager** working with HNI clients and recurring deal flows
 
-**Use your preferred IDE**
+Despite different roles, both faced the same systemic problems:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Deals stored across **notebooks, WhatsApp, Notes apps, and Google Sheets**
+- No single source of truth for:
+  - Active deals
+  - Shared deals
+  - Past negotiations
+- Excessive time wasted **manually typing and re-typing deals on WhatsApp**
+- High risk of:
+  - Lost deal information
+  - Inconsistent data
+  - Missed follow-ups
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Each tool solved only a part of the problem:
 
-Follow these steps:
+- **Notebooks** → not searchable, not shareable
+- **WhatsApp** → unstructured, noisy, non-persistent
+- **Google Sheets** → rigid, slow, not mobile-first
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Solution & Approach
 
-# Step 3: Install the necessary dependencies.
-npm i
+**BrokerLog** centralizes the entire deal workflow into a structured web application where:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+- Deals are created **once** and reused
+- Sharing is **automated**, not manual
+- Data is searchable, persistent, and consistent
+- Usage limits are enforced for scalability and cost control
 
-**Edit a file directly in GitHub**
+The product is intentionally **opinionated**:
+- Built for speed and clarity
+- Optimized for real infrastructure constraints
+- Designed to evolve into a multi-tenant SaaS
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+# Technical Overview
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Tech Stack
 
-## What technologies are used for this project?
+### Frontend
+- **React (TypeScript)**
+- Component-driven UI architecture
+- Clear separation of UI, state, and logic
+- Fully responsive, mobile-first design
 
-This project is built with:
+### Backend & Services
+- **Supabase**
+  - PostgreSQL database
+  - Authentication (JWT-based)
+  - Row Level Security (RLS)
+  - Media storage
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Hosting & Infrastructure
+- **Netlify**
+  - Frontend hosting
+  - CI/CD via GitHub integration
+- Environment-based configuration (dev / prod ready)
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/5d5bd479-68f5-4c7e-9ef6-7d376350b152) and click on Share -> Publish.
+## Core Architectural Decisions
 
-## Can I connect a custom domain to my Lovable project?
+### 1. Structured Deal Model
 
-Yes, you can!
+Deals are modeled as **structured entities**, not free-text messages.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Each deal contains:
+- Property metadata
+- Pricing & negotiation details
+- Location and category mapping
+- Media attachments
+- Status and timestamps
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+This enables:
+- Fast search and filtering
+- Re-sharing without duplication
+- Future analytics and reporting
+
+---
+
+### 2. Automated Deal Sharing
+
+Instead of manually typing deals on WhatsApp:
+
+- Deals are rendered into **consistent, shareable formats**
+- One-click sharing
+- Zero re-typing
+- Reduced human error
+
+This directly solved the biggest time-waste problem identified during user research.
+
+---
+
+### 3. Storage & Bandwidth Constraints
+
+This is **not** an unlimited upload system.
+
+Per-user limits are enforced on:
+- Number of properties
+- Media uploads per property
+- Total storage usage
+- Bandwidth consumption
+
+This ensures:
+- Predictable infrastructure costs
+- Abuse prevention
+- Sustainable SaaS economics
+
+---
+
+### 4. Dynamic User Limits System
+
+User limits are **not hardcoded**.
+
+They are:
+- Config-driven
+- Applied per user
+- Easily adjustable without refactoring
+
+This allows:
+- Tier-based plans
+- Enterprise overrides
+- Future billing integration
+
+---
+
+### 5. Security & Access Control
+
+- Supabase **Row Level Security (RLS)**
+- Auth-scoped database queries
+- Users can only access their own data
+- No client-side trust assumptions
+
+---
+
+## Database Design
+
+- PostgreSQL schema with:
+  - Normalized deal records
+  - Media references
+  - User ownership mapping
+- Designed for:
+  - Multi-tenant usage
+  - Scalability
+  - Future analytics and audit trails
+
+---
+
+## Frontend Engineering Highlights
+
+- Clear separation between:
+  - UI components
+  - Business logic
+  - API interaction
+- Reusable components for:
+  - Deal cards
+  - Filters
+  - Media previews
+- Optimized for both:
+  - On-field mobile users
+  - Desktop-heavy office users
+
+---
+
+## Performance Considerations
+
+- Lazy loading for media
+- Optimized re-renders
+- Controlled data fetching
+- Efficient Supabase queries
+
+---
+
+## Testing Philosophy
+
+The codebase is structured to support:
+- Unit testing of core calculations
+- Isolated testing of utilities and helpers
+- Scalable test expansion without major refactors
+
+---
+
+## Deployment & CI/CD
+
+- GitHub → Netlify automatic deployments
+- Preview builds for feature branches
+- Environment-based secrets management
+
+---
+
+## Product Roadmap
+
+- Role-based access (broker / manager / assistant)
+- Advanced deal analytics
+- Client-facing share links
+- Plan-based usage limits
+- CRM-style follow-ups
+
+---
+
+## Why This Project Matters
+
+BrokerLog is not a tutorial or clone project.
+
+It is:
+- Built from **real user pain**
+- Designed with **business constraints**
+- Engineered for **scalability**
+- Focused on **real-world usage**
+
+This repository showcases:
+- Product thinking
+- System design
+- Practical SaaS engineering decisions
+
+---
